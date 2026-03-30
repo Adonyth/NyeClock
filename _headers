@@ -2,6 +2,9 @@
 /website/*
   Cache-Control: no-cache, must-revalidate
 
+/website/index.html
+  Cache-Control: no-cache, must-revalidate
+
 /tw_.html
   Cache-Control: public, max-age=300
 
