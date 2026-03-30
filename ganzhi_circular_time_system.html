@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>六十甲子 · 圆形时系</title>
+  <!-- 可选：精确农历/节气干支；失败时回退内置近似算法 -->
+  <script src="https://cdn.jsdelivr.net/npm/solarlunar@3.1.0/dist/solarlunar.min.js"></script>
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --fg: #e8ecf4;
+      --muted: #7a8496;
+      --accent: #5eb8ff;
+      --branch-ring: rgba(94, 184, 255, 0.35);
+      --stem-ring: rgba(247, 201, 64, 0.32);
+      --highlight: #ffd75e;
+      --pillar-bg: rgba(18, 24, 36, 0.92);
+      --font-ui: "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      --font-zh: "Songti SC", "Noto Serif SC", "STSong", serif;
+    }
+    [data-theme="light"] {
+      --bg: #f0f2f7;
+      --fg: #1a1d24;
+      --muted: #5c6470;
+      --accent: #1565c0;
+      --branch-ring: rgba(21, 101, 192, 0.25);
+      --stem-ring: rgba(183, 28, 28, 0.2);
+      --highlight: #c62828;
+      --pillar-bg: rgba(255, 255, 255, 0.95);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse 120% 80% at 50% 20%, #152028 0%, var(--bg) 55%);
+      color: var(--fg);
+      font-family: var(--font-ui);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.25rem;
+    }
+    [data-theme="light"] body {
+      background: radial-gradient(ellipse 120% 80% at 50% 15%, #fff 0%, var(--bg) 50%);
+    }
+    h1 {
+      font-weight: 600;
+      font-size: 1.15rem;
+      letter-spacing: 0.06em;
+      margin: 0 0 0.35rem;
+    }
+    .sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      text-align: center;
+      max-width: 42rem;
+      line-height: 1.45;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .toolbar button {
+      background: rgba(94, 184, 255, 0.12);
+      border: 1px solid rgba(94, 184, 255, 0.35);
+      color: var(--fg);
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .toolbar button:hover { background: rgba(94, 184, 255, 0.22); }
+    .layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 56rem;
+    }
+    .clock-wrap {
+      position: relative;
+      width: min(92vw, 420px);
+      aspect-ratio: 1;
+    }
+    .clock-wrap svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.35));
+    }
+    .pillar-panel {
+      background: var(--pillar-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      min-width: 14rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    .pillar-panel h2 {
+      margin: 0 0 0.75rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .pillar-row {
+      display: grid;
+      grid-template-columns: 4rem 1fr;
+      gap: 0.35rem 0.75rem;
+      align-items: baseline;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+    .pillar-row .label { color: var(--muted); font-size: 0.75rem; }
+    .pillar-row .gz {
+      font-family: var(--font-zh);
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+    }
+    .pillar-row.hour .gz {
+      color: var(--highlight);
+      text-shadow: 0 0 24px rgba(255, 215, 94, 0.25);
+    }
+    .meta {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.5;
+      font-variant-numeric: tabular-nums;
+    }
+    .zodiac-note { font-size: 0.7rem; color: var(--muted); margin-top: 0.5rem; }
+  </style>
+</head>
+<body data-theme="dark">
+  <h1>六十甲子圆形时系</h1>
+  <p class="sub">
+    地支为时间主轴（十二时辰）；天干由日干与时支按五鼠遁推导，与地支同盘联动旋转。完整保留 10×12→60 循环，非单点状态机。
+  </p>
+  <div class="toolbar">
+    <button type="button" id="btnTheme" aria-label="切换主题">主题：深色</button>
+    <button type="button" id="btnPause" aria-label="暂停动画">暂停动画</button>
+  </div>
+  <div class="layout">
+    <div class="clock-wrap" aria-label="干支圆盘">
+      <svg id="ganzhiSvg" viewBox="-110 -110 220 220" role="img">
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:var(--branch-ring);stop-opacity:1" />
+            <stop offset="100%" style="stop-color:transparent;stop-opacity:0.3" />
+          </linearGradient>
+        </defs>
+        <!-- Layer 1+2：统一旋转组（地支主钟） -->
+        <g id="rotateMaster">
+          <circle r="98" fill="none" stroke="url(#ringGrad)" stroke-width="0.5" opacity="0.6" />
+          <!-- 12 地支扇区刻度 -->
+          <g id="branchSectors"></g>
+          <g id="branchLabels"></g>
+          <!-- 10 天干环 -->
+          <g id="stemRing"></g>
+        </g>
+        <!-- 中心：四柱占位由 HTML 面板承担；此处仅装饰准星 -->
+        <circle r="52" fill="rgba(12,16,24,0.55)" stroke="rgba(255,255,255,0.08)" stroke-width="0.8" />
+        <circle r="3" fill="var(--highlight)" opacity="0.9" />
+      </svg>
+    </div>
+    <aside class="pillar-panel" id="pillarPanel">
+      <h2>Layer 3 · 四柱</h2>
+      <div class="pillar-row"><span class="label">年柱</span><span class="gz" id="pYear">—</span></div>
+      <div class="pillar-row"><span class="label">月柱</span><span class="gz" id="pMonth">—</span></div>
+      <div class="pillar-row"><span class="label">日柱</span><span class="gz" id="pDay">—</span></div>
+      <div class="pillar-row hour"><span class="label">时柱</span><span class="gz" id="pHour">—</span></div>
+      <div class="meta" id="metaReadout"></div>
+      <div class="zodiac-note" id="zodiacNote"></div>
+    </aside>
+  </div>
+
+  <script>
+    /* ========== 1. DATA — 完整循环，不可删简 ========== */
+    const STEMS = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+    const BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+    /** 六十甲子序：索引 0–59，干 i、支 j 满足 (i-j)%2===0 方合法 */
+    const SEXAGENARY_60 = (function () {
+      const out = [];
+      let si = 0,
+        bi = 0;
+      for (let k = 0; k < 60; k++) {
+        out.push(STEMS[si] + BRANCHES[bi]);
+        si = (si + 1) % 10;
+        bi = (bi + 1) % 12;
+      }
+      return out;
+    })();
+    const ZODIAC = ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"];
+
+    /* ========== 2. TIME → 地支时辰（2 小时一块） ==========
+     * 与传统一致：子含 23、0 时，…，亥含 21、22 时。
+     * branchIndex = floor(((hour+1)%24)/2) → 0..11
+     */
+    function branchIndexFromClockHour24(h) {
+      const x = Math.floor(Number(h)) || 0;
+      const hh = ((x % 24) + 24) % 24;
+      return Math.floor(((hh + 1) % 24) / 2);
+    }
+
+    /** 浮点日内小时 [0,24) → 连续扇区 [0,12)，用于平滑旋转 */
+    function sectorFloatFromFractionalHours(t) {
+      const x = ((t % 24) + 24) % 24;
+      return ((x + 1) % 24) / 2;
+    }
+
+    /* ========== 3. 时干：五鼠遁 — 日干 + 时支序 → 时干（随支，非独立转盘） ========== */
+    function hourStemIndexFromDayStemWushu(dayStemChar, hourBranchIndex) {
+      const z = ((hourBranchIndex % 12) + 12) % 12;
+      let startIdx;
+      switch (dayStemChar) {
+        case "甲":
+        case "己":
+          startIdx = 0;
+          break;
+        case "乙":
+        case "庚":
+          startIdx = 2;
+          break;
+        case "丙":
+        case "辛":
+          startIdx = 4;
+          break;
+        case "丁":
+        case "壬":
+          startIdx = 6;
+          break;
+        case "戊":
+        case "癸":
+          startIdx = 8;
+          break;
+        default: {
+          const di = STEMS.indexOf(dayStemChar);
+          startIdx = di >= 0 ? (di * 2) % 10 : 0;
+        }
+      }
+      return (startIdx + z) % 10;
+    }
+
+    /* ========== 4. 日柱（与常见 HTML 演示一致：UTC 日历日锚） ========== */
+    const BASE_DAY = new Date(Date.UTC(1900, 3, 20));
+    const BASE_DAY_INDEX = 59;
+
+    function getGanZhiDayUTC(date) {
+      const utc = new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+      );
+      const diffDays = Math.floor((utc - BASE_DAY) / 86400000);
+      const idx = ((BASE_DAY_INDEX + diffDays) % 60 + 60) % 60;
+      return SEXAGENARY_60[idx];
+    }
+
+    function getHourPillar(dayGZ, dateLocal) {
+      const h =
+        dateLocal.getHours() +
+        dateLocal.getMinutes() / 60 +
+        dateLocal.getSeconds() / 3600 +
+        dateLocal.getMilliseconds() / 3600000;
+      const bi = branchIndexFromClockHour24(Math.floor(((h % 24) + 24) % 24));
+      const si = hourStemIndexFromDayStemWushu(dayGZ.charAt(0), bi);
+      return STEMS[si] + BRANCHES[bi];
+    }
+
+    /** 年/月：优先 solarlunar；否则立春近似 + 五虎遁 */
+    function getFourPillars(now) {
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      const d = now.getDate();
+      let gzYear, gzMonth, gzDay, gzHour;
+
+      gzDay = getGanZhiDayUTC(now);
+
+      var SL = typeof solarLunar !== "undefined" ? solarLunar : typeof solarlunar !== "undefined" ? solarlunar : null;
+      if (SL && SL.solar2lunar) {
+        try {
+          const r = SL.solar2lunar(y, m + 1, d);
+          if (r && r.gzYear && r.gzMonth) {
+            gzYear = r.gzYear;
+            gzMonth = r.gzMonth;
+          }
+        } catch (e) {}
+      }
+      if (!gzYear) gzYear = yearPillarApproxLiChun(now);
+      if (!gzMonth) gzMonth = monthPillarFromYearStemWuhu(gzYear, now);
+
+      gzHour = getHourPillar(gzDay, now);
+      const hFrac =
+        now.getHours() +
+        now.getMinutes() / 60 +
+        now.getSeconds() / 3600 +
+        now.getMilliseconds() / 3600000;
+      const biNow = branchIndexFromClockHour24(Math.floor(((hFrac % 24) + 24) % 24));
+
+      return {
+        year: gzYear,
+        month: gzMonth,
+        day: gzDay,
+        hour: gzHour,
+        branchIndex: biNow,
+        stemIndex: STEMS.indexOf(gzHour.charAt(0)),
+      };
+    }
+
+    function yearPillarApproxLiChun(date) {
+      let yy = date.getFullYear();
+      const liChun = new Date(yy, 1, 4);
+      if (date < liChun) yy--;
+      const stem = STEMS[((yy - 4) % 10 + 10) % 10];
+      const br = BRANCHES[((yy - 4) % 12 + 12) % 12];
+      return stem + br;
+    }
+
+    /**
+     * 五虎遁：由年干定寅月起始天干，顺推月干；月支以正月为寅序（无 solarlunar 时仅用公历月近似，非节气界）。
+     */
+    function monthPillarFromYearStemWuhu(yearGZ, date) {
+      const yStem = yearGZ.charAt(0);
+      const tigerStemStart = { 甲: 2, 己: 2, 乙: 4, 庚: 4, 丙: 6, 辛: 6, 丁: 8, 壬: 8, 戊: 0, 癸: 0 };
+      const start = tigerStemStart[yStem] != null ? tigerStemStart[yStem] : 2;
+      const lunarMonthIndex = date.getMonth();
+      const branchFromYin = (lunarMonthIndex + 2) % 12;
+      const stemIdx = (start + lunarMonthIndex) % 10;
+      return STEMS[stemIdx] + BRANCHES[branchFromYin];
+    }
+
+    function sexagenaryIndex60(pair) {
+      for (let i = 0; i < 60; i++) if (SEXAGENARY_60[i] === pair) return i;
+      return -1;
+    }
+
+    /* ========== 5. RENDERING — SVG 三层：外支、内干、HTML 四柱 ========== */
+    const DEG = Math.PI / 180;
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.getElementById("ganzhiSvg");
+    const rotateMaster = document.getElementById("rotateMaster");
+    const branchSectors = document.getElementById("branchSectors");
+    const branchLabels = document.getElementById("branchLabels");
+    const stemRing = document.getElementById("stemRing");
+
+    const R_OUT = 88;
+    const R_IN = 62;
+    const R_STEM = 74;
+
+    function wedgePath(r, a0, a1) {
+      const large = a1 - a0 > Math.PI ? 1 : 0;
+      const x0 = r * Math.cos(a0),
+        y0 = r * Math.sin(a0);
+      const x1 = r * Math.cos(a1),
+        y1 = r * Math.sin(a1);
+      return `M 0 0 L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`;
+    }
+
+    function buildStaticRings() {
+      branchSectors.textContent = "";
+      branchLabels.textContent = "";
+      stemRing.textContent = "";
+
+      for (let i = 0; i < 12; i++) {
+        const a0 = (i / 12) * Math.PI * 2 - Math.PI / 2;
+        const a1 = ((i + 1) / 12) * Math.PI * 2 - Math.PI / 2;
+        const p = document.createElementNS(NS, "path");
+        p.setAttribute("d", wedgePath(R_OUT, a0, a1));
+        p.setAttribute("fill", i % 2 === 0 ? "rgba(94,184,255,0.06)" : "rgba(94,184,255,0.02)");
+        p.setAttribute("stroke", "rgba(255,255,255,0.06)");
+        p.setAttribute("stroke-width", "0.35");
+        branchSectors.appendChild(p);
+
+        const mid = (a0 + a1) / 2;
+        const lx = R_OUT * 0.92 * Math.cos(mid);
+        const ly = R_OUT * 0.92 * Math.sin(mid);
+        const t = document.createElementNS(NS, "text");
+        t.setAttribute("x", lx);
+        t.setAttribute("y", ly);
+        t.setAttribute("text-anchor", "middle");
+        t.setAttribute("dominant-baseline", "middle");
+        t.setAttribute("fill", "var(--fg)");
+        t.setAttribute("font-size", "11");
+        t.setAttribute("font-family", "Songti SC, Noto Serif SC, serif");
+        t.setAttribute("font-weight", "600");
+        t.setAttribute("data-idx", String(i));
+        t.textContent = BRANCHES[i];
+        branchLabels.appendChild(t);
+      }
+
+      const step = (Math.PI * 2) / 10;
+      for (let s = 0; s < 10; s++) {
+        const mid = s * step - Math.PI / 2 + step / 2;
+        const tx = R_STEM * Math.cos(mid);
+        const ty = R_STEM * Math.sin(mid);
+        const t = document.createElementNS(NS, "text");
+        t.setAttribute("x", tx);
+        t.setAttribute("y", ty);
+        t.setAttribute("text-anchor", "middle");
+        t.setAttribute("dominant-baseline", "middle");
+        t.setAttribute("fill", "var(--muted)");
+        t.setAttribute("font-size", "10");
+        t.setAttribute("font-family", "Songti SC, Noto Serif SC, serif");
+        t.setAttribute("data-stem", String(s));
+        t.textContent = STEMS[s];
+        stemRing.appendChild(t);
+      }
+
+      const ringLine = document.createElementNS(NS, "circle");
+      ringLine.setAttribute("r", String(R_IN));
+      ringLine.setAttribute("fill", "none");
+      ringLine.setAttribute("stroke", "var(--stem-ring)");
+      ringLine.setAttribute("stroke-width", "0.6");
+      stemRing.insertBefore(ringLine, stemRing.firstChild);
+    }
+
+    let animPaused = false;
+    let lastPillar = null;
+
+    function applyHighlight(fp) {
+      const bi = fp.branchIndex;
+      const si = fp.stemIndex;
+      branchLabels.querySelectorAll("text").forEach((el, i) => {
+        el.setAttribute("fill", i === bi ? "var(--highlight)" : "var(--fg)");
+        el.setAttribute("font-size", i === bi ? "13" : "11");
+      });
+      stemRing.querySelectorAll("text[data-stem]").forEach((el) => {
+        const idx = parseInt(el.getAttribute("data-stem"), 10);
+        const on = idx === si;
+        el.setAttribute("fill", on ? "var(--highlight)" : "var(--muted)");
+        el.setAttribute("font-size", on ? "11.5" : "10");
+      });
+    }
+
+    /**
+     * 主旋转：整盘随时间转动，使「当前时辰」扇区保持在与示例一致的相位。
+     * rotation = -sectorFloat * 30°（每时辰 30° 圆心角，十二支铺满 360°）
+     */
+    function rotationDegFromTime(date) {
+      const h =
+        date.getHours() +
+        date.getMinutes() / 60 +
+        date.getSeconds() / 3600 +
+        date.getMilliseconds() / 3600000;
+      const sector = sectorFloatFromFractionalHours(h);
+      return -sector * 30;
+    }
+
+    function tick() {
+      const now = new Date();
+      const fp = getFourPillars(now);
+      if (
+        !lastPillar ||
+        lastPillar.hour !== fp.hour ||
+        lastPillar.day !== fp.day
+      ) {
+        lastPillar = fp;
+        document.getElementById("pYear").textContent = fp.year;
+        document.getElementById("pMonth").textContent = fp.month;
+        document.getElementById("pDay").textContent = fp.day;
+        document.getElementById("pHour").textContent = fp.hour;
+        const brName = BRANCHES[fp.branchIndex];
+        const dayOrd = sexagenaryIndex60(fp.day);
+        document.getElementById("metaReadout").textContent =
+          `时支序 ${fp.branchIndex}（${brName}） · 时干序 ${fp.stemIndex} · 日柱六十序 #${dayOrd >= 0 ? dayOrd : "—"}`;
+        const yBr = fp.year.charAt(1);
+        const ziIdx = BRANCHES.indexOf(yBr);
+        document.getElementById("zodiacNote").textContent =
+          ziIdx >= 0 ? `生肖（年支）：${ZODIAC[ziIdx]}` : "生肖：—";
+      }
+      applyHighlight(fp);
+
+      const deg = rotationDegFromTime(now);
+      rotateMaster.setAttribute("transform", `rotate(${deg})`);
+
+      if (!animPaused) requestAnimationFrame(tick);
+    }
+
+    buildStaticRings();
+    requestAnimationFrame(tick);
+
+    document.getElementById("btnPause").addEventListener("click", function () {
+      animPaused = !animPaused;
+      this.textContent = animPaused ? "继续动画" : "暂停动画";
+      if (!animPaused) requestAnimationFrame(tick);
+    });
+
+    document.getElementById("btnTheme").addEventListener("click", function () {
+      const b = document.body;
+      const next = b.getAttribute("data-theme") === "light" ? "dark" : "light";
+      b.setAttribute("data-theme", next);
+      this.textContent = next === "light" ? "主题：浅色" : "主题：深色";
+    });
+
+    branchLabels.addEventListener("mouseover", function (e) {
+      const t = e.target;
+      if (t.tagName !== "text") return;
+      const i = t.getAttribute("data-idx");
+      if (i == null) return;
+      t.setAttribute("title", `地支 ${BRANCHES[i]} · 扇区 ${i}`);
+    });
+    stemRing.addEventListener("mouseover", function (e) {
+      const t = e.target;
+      if (t.tagName !== "text" || t.getAttribute("data-stem") == null) return;
+      const s = t.getAttribute("data-stem");
+      t.setAttribute("title", `天干 ${STEMS[s]} · 序 ${s}`);
+    });
+  </script>
+</body>
+</html>

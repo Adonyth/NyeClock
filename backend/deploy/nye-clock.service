@@ -1,0 +1,17 @@
+[Unit]
+Description=Nye Clock backend (Express)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/nye-clock/Adonyth/backend
+EnvironmentFile=/opt/nye-clock/Adonyth/backend/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

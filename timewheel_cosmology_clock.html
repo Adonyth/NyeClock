@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Timewheel Cosmology Clock · 时轮宇宙钟</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ========== Design tokens (overridden per theme) ========== */
+    :root {
+      --tw-serif: "Noto Serif SC", "Songti SC", Georgia, serif;
+      --tw-sans: "DM Sans", system-ui, sans-serif;
+      --tw-mono: "JetBrains Mono", ui-monospace, monospace;
+      --tw-radius-outer: 48%;
+      --tw-radius-inner: 32%;
+      --tw-radius-center: 22%;
+      --tw-ease: cubic-bezier(0.4, 0, 0.2, 1);
+      --tw-panel-w: min(420px, 92vw);
+      --tw-safe-top: env(safe-area-inset-top, 0px);
+      --tw-safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: var(--tw-sans);
+      color: var(--tw-fg);
+      background: var(--tw-bg);
+      transition: background 0.6s var(--tw-ease), color 0.4s;
+    }
+
+    /* ----- Theme: Cosmic Observatory ----- */
+    body.theme-cosmic {
+      --tw-bg: radial-gradient(ellipse 120% 100% at 50% 0%, #0d1528 0%, #050810 45%, #020408 100%);
+      --tw-fg: #e8eef8;
+      --tw-muted: rgba(200, 215, 240, 0.55);
+      --tw-accent: #6eb8ff;
+      --tw-glow: rgba(110, 184, 255, 0.45);
+      --tw-ring1: rgba(100, 160, 255, 0.35);
+      --tw-ring2: rgba(180, 120, 255, 0.22);
+      --tw-panel-bg: rgba(8, 14, 28, 0.82);
+      --tw-panel-border: rgba(120, 170, 255, 0.25);
+      --tw-stem-fill: rgba(255, 220, 140, 0.12);
+      --tw-branch-fill: rgba(80, 200, 255, 0.08);
+      --tw-active: #7cf0ff;
+      --tw-star: rgba(255, 255, 255, 0.35);
+    }
+
+    /* ----- Theme: Ancient Chinese Divination ----- */
+    body.theme-ancient {
+      --tw-bg: linear-gradient(165deg, #2a2218 0%, #1a1410 50%, #0f0c08 100%);
+      --tw-fg: #f0e6d4;
+      --tw-muted: rgba(200, 180, 150, 0.55);
+      --tw-accent: #c9a227;
+      --tw-glow: rgba(201, 162, 39, 0.4);
+      --tw-ring1: rgba(180, 140, 60, 0.35);
+      --tw-ring2: rgba(100, 70, 40, 0.4);
+      --tw-panel-bg: rgba(35, 28, 18, 0.92);
+      --tw-panel-border: rgba(201, 162, 39, 0.35);
+      --tw-stem-fill: rgba(201, 162, 39, 0.1);
+      --tw-branch-fill: rgba(80, 60, 40, 0.25);
+      --tw-active: #ffd060;
+      --tw-star: transparent;
+    }
+
+    /* ----- Theme: Futuristic Tech ----- */
+    body.theme-future {
+      --tw-bg: radial-gradient(ellipse 100% 80% at 50% 100%, #0a1628 0%, #020814 60%, #010408 100%);
+      --tw-fg: #e0f4ff;
+      --tw-muted: rgba(120, 200, 230, 0.55);
+      --tw-accent: #00f0d8;
+      --tw-glow: rgba(0, 240, 216, 0.5);
+      --tw-ring1: rgba(0, 240, 216, 0.28);
+      --tw-ring2: rgba(180, 100, 255, 0.2);
+      --tw-panel-bg: rgba(4, 20, 32, 0.75);
+      --tw-panel-border: rgba(0, 240, 216, 0.35);
+      --tw-stem-fill: rgba(0, 240, 216, 0.08);
+      --tw-branch-fill: rgba(160, 100, 255, 0.06);
+      --tw-active: #5cffea;
+      --tw-star: rgba(0, 255, 220, 0.15);
+    }
+
+    /* ----- Theme: Minimal Scientific ----- */
+    body.theme-minimal {
+      --tw-bg: #fafafa;
+      --tw-fg: #111;
+      --tw-muted: rgba(0, 0, 0, 0.45);
+      --tw-accent: #0066cc;
+      --tw-glow: rgba(0, 102, 204, 0.25);
+      --tw-ring1: rgba(0, 0, 0, 0.12);
+      --tw-ring2: rgba(0, 0, 0, 0.08);
+      --tw-panel-bg: rgba(255, 255, 255, 0.94);
+      --tw-panel-border: rgba(0, 0, 0, 0.12);
+      --tw-stem-fill: rgba(0, 102, 204, 0.06);
+      --tw-branch-fill: rgba(0, 0, 0, 0.04);
+      --tw-active: #0066cc;
+      --tw-star: transparent;
+    }
+    body.theme-minimal .tw-nebula,
+    body.theme-minimal .tw-grain { opacity: 0; }
+
+    /* ----- Display modes ----- */
+    body.mode-minimal-ui .tw-cross-layer,
+    body.mode-minimal-ui .tw-secondary-ring,
+    body.mode-minimal-ui .tw-legend,
+    body.mode-minimal-ui #twPointer,
+    body.mode-minimal-ui .tw-detail-panel:not(.tw-detail--open) { opacity: 0; pointer-events: none; }
+    body.mode-minimal-ui .tw-toolbar { opacity: 0.35; }
+    body.mode-minimal-ui .tw-toolbar:hover { opacity: 1; }
+
+    body.mode-mystical .tw-scientific-only { display: none; }
+    body.mode-scientific .tw-mystical-only { display: none; }
+
+    /* ========== Layout ========== */
+    .tw-app {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: calc(12px + var(--tw-safe-top)) 12px calc(12px + var(--tw-safe-bottom));
+    }
+
+    .tw-stage {
+      position: relative;
+      width: min(96vmin, 920px);
+      aspect-ratio: 1;
+      max-height: min(96vh, 920px);
+    }
+
+    .tw-bg-fx {
+      position: absolute;
+      inset: -8%;
+      border-radius: 50%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .tw-nebula {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 30% 20%, rgba(120, 100, 255, 0.15), transparent 50%),
+        radial-gradient(ellipse 50% 50% at 70% 80%, rgba(50, 150, 255, 0.12), transparent 45%);
+      animation: twNebula 24s ease-in-out infinite alternate;
+    }
+    body.theme-ancient .tw-nebula {
+      background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(80, 50, 20, 0.25), transparent 55%);
+      animation-duration: 40s;
+    }
+    body.theme-future .tw-nebula {
+      background:
+        conic-gradient(from 180deg at 50% 50%, rgba(0, 255, 220, 0.08), transparent 40%, rgba(160, 80, 255, 0.06), transparent 75%);
+      animation: twSpin 60s linear infinite;
+    }
+    @keyframes twNebula {
+      0% { transform: scale(1) translate(0, 0); opacity: 0.9; }
+      100% { transform: scale(1.08) translate(2%, -1%); opacity: 1; }
+    }
+    @keyframes twSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    .tw-stars {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 20%, var(--tw-star), transparent),
+        radial-gradient(1px 1px at 80% 40%, var(--tw-star), transparent),
+        radial-gradient(1.5px 1.5px at 45% 75%, var(--tw-star), transparent),
+        radial-gradient(1px 1px at 60% 15%, var(--tw-star), transparent);
+      opacity: 0.7;
+      animation: twTwinkle 8s ease-in-out infinite;
+    }
+    @keyframes twTwinkle {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.85; }
+    }
+
+    .tw-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    body.theme-ancient .tw-grain { opacity: 0.12; }
+
+    .tw-svg-root {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 20px var(--tw-glow));
+    }
+    body.theme-minimal .tw-svg-root { filter: none; }
+
+    .tw-ring-outer { cursor: pointer; }
+    .tw-ring-inner { cursor: pointer; }
+    .tw-seg-branch { transition: fill 0.35s var(--tw-ease), stroke 0.35s; }
+    .tw-seg-branch:hover { fill: var(--tw-branch-fill); stroke: var(--tw-accent); }
+    .tw-seg-branch.is-active {
+      fill: color-mix(in srgb, var(--tw-active) 22%, transparent);
+      stroke: var(--tw-active);
+      stroke-width: 1.5;
+    }
+    .tw-seg-stem {
+      transition: fill 0.35s, stroke 0.35s;
+      cursor: pointer;
+      /* 非激活也必须可见：细描边 + 可点区域 */
+      stroke: rgba(200, 180, 120, 0.38);
+      stroke-width: 0.45;
+      fill: rgba(255, 255, 255, 0.02);
+    }
+    .tw-seg-stem:hover { fill: var(--tw-stem-fill); stroke: rgba(220, 200, 140, 0.55); }
+    .tw-stem-item.is-active .tw-seg-stem {
+      fill: color-mix(in srgb, var(--tw-glow) 38%, transparent);
+      stroke: var(--tw-accent);
+      stroke-width: 1.15;
+    }
+
+    /* 十天干文字：始终不透明；仅当前时干加强对比与字重 */
+    .tw-stem-item .tw-label-stem {
+      opacity: 1;
+      font-weight: 500;
+    }
+    .tw-stem-item .tw-sub { opacity: 0.88; }
+    .tw-stem-item.is-active .tw-label-stem {
+      font-weight: 700;
+      fill: var(--tw-fg);
+      paint-order: stroke fill;
+      stroke: color-mix(in srgb, var(--tw-accent) 55%, transparent);
+      stroke-width: 0.35px;
+    }
+    .tw-stem-item.is-active .tw-sub {
+      opacity: 1;
+      fill: var(--tw-highlight-color, var(--tw-fg));
+    }
+
+    .tw-label-branch, .tw-label-stem {
+      font-family: var(--tw-serif);
+      font-size: clamp(8px, 2.1vmin, 13px);
+      fill: var(--tw-fg);
+      pointer-events: none;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+    body.theme-future .tw-label-branch,
+    body.theme-future .tw-label-stem {
+      font-family: var(--tw-sans);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+    .tw-sub {
+      font-family: var(--tw-sans);
+      font-size: clamp(6px, 1.4vmin, 9px);
+      fill: var(--tw-muted);
+    }
+    body.mode-minimal-ui .tw-sub { opacity: 0; }
+
+    /* Center hub */
+    .tw-hub {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 38%;
+      max-width: 280px;
+      text-align: center;
+      pointer-events: none;
+    }
+    .tw-time-digital {
+      font-family: var(--tw-mono);
+      font-size: clamp(1.1rem, 4.2vmin, 2.35rem);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      line-height: 1.15;
+      color: var(--tw-fg);
+      text-shadow: 0 0 24px var(--tw-glow);
+    }
+    body.theme-minimal .tw-time-digital { text-shadow: none; }
+    .tw-time-ganzhi {
+      font-family: var(--tw-serif);
+      font-size: clamp(1rem, 3.6vmin, 1.85rem);
+      font-weight: 600;
+      margin-top: 0.35em;
+      color: var(--tw-accent);
+    }
+    .tw-time-meta {
+      font-size: clamp(0.65rem, 1.8vmin, 0.8rem);
+      color: var(--tw-muted);
+      margin-top: 0.5em;
+      line-height: 1.4;
+    }
+
+    /* Secondary ring (24 solar terms / zodiac) */
+    .tw-secondary-ring {
+      pointer-events: none;
+    }
+    .tw-cross-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .tw-cross-layer line {
+      stroke: var(--tw-ring1);
+      stroke-width: 0.5;
+      opacity: 0.35;
+    }
+
+    /* Toolbar */
+    .tw-toolbar {
+      position: fixed;
+      top: calc(8px + var(--tw-safe-top));
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px 12px;
+      z-index: 40;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--tw-panel-bg);
+      border: 1px solid var(--tw-panel-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      max-width: 96vw;
+    }
+    .tw-toolbar label {
+      font-size: 0.7rem;
+      color: var(--tw-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .tw-toolbar select, .tw-toolbar button {
+      font-family: var(--tw-sans);
+      font-size: 0.78rem;
+      border-radius: 8px;
+      border: 1px solid var(--tw-panel-border);
+      background: color-mix(in srgb, var(--tw-fg) 6%, transparent);
+      color: var(--tw-fg);
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .tw-toolbar button:active { transform: scale(0.97); }
+    .tw-toolbar button.tw-btn-on {
+      background: color-mix(in srgb, var(--tw-accent) 35%, transparent);
+      border-color: var(--tw-accent);
+    }
+    .tw-legend {
+      position: fixed;
+      bottom: calc(10px + var(--tw-safe-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.68rem;
+      color: var(--tw-muted);
+      text-align: center;
+      max-width: 90vw;
+      line-height: 1.35;
+      z-index: 30;
+    }
+
+    /* Detail panel */
+    .tw-detail-panel {
+      position: fixed;
+      right: 16px;
+      top: 50%;
+      transform: translate(120%, -50%);
+      width: var(--tw-panel-w);
+      max-height: min(78vh, 560px);
+      overflow-y: auto;
+      z-index: 50;
+      padding: 20px 22px;
+      border-radius: 16px;
+      background: var(--tw-panel-bg);
+      border: 1px solid var(--tw-panel-border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      transition: transform 0.45s var(--tw-ease);
+    }
+    .tw-detail-panel.tw-detail--open {
+      transform: translate(0, -50%);
+    }
+    @media (max-width: 768px) {
+      .tw-detail-panel {
+        right: 0;
+        left: 0;
+        bottom: 0;
+        top: auto;
+        transform: translateY(110%);
+        max-height: 45vh;
+        border-radius: 16px 16px 0 0;
+      }
+      .tw-detail-panel.tw-detail--open { transform: translateY(0); }
+    }
+    .tw-detail-panel h3 {
+      font-family: var(--tw-serif);
+      font-size: 1.25rem;
+      margin-bottom: 8px;
+      color: var(--tw-accent);
+    }
+    .tw-detail-panel p {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: var(--tw-muted);
+      margin-bottom: 10px;
+    }
+    .tw-detail-panel .tw-kv {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 14px;
+      font-size: 0.82rem;
+      margin-top: 12px;
+    }
+    .tw-detail-panel .tw-kv dt { color: var(--tw-muted); }
+    .tw-detail-panel .tw-kv dd { color: var(--tw-fg); }
+    .tw-detail-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--tw-fg) 8%, transparent);
+      color: var(--tw-fg);
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .tw-drag-hint {
+      position: fixed;
+      left: 16px;
+      bottom: calc(10px + var(--tw-safe-bottom));
+      font-size: 0.65rem;
+      color: var(--tw-muted);
+      max-width: 200px;
+      z-index: 25;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body class="theme-cosmic mode-mystical">
+  <div class="tw-toolbar" role="toolbar" aria-label="时轮控制">
+    <div>
+      <label for="selTheme">主题</label>
+      <select id="selTheme" aria-label="视觉主题">
+        <option value="cosmic">宇宙观测台</option>
+        <option value="ancient">古法占筮</option>
+        <option value="future">未来科技</option>
+        <option value="minimal">极简科学表盘</option>
+      </select>
+    </div>
+    <div>
+      <label for="selMode">模式</label>
+      <select id="selMode" aria-label="信息模式">
+        <option value="mystical">玄理象征</option>
+        <option value="scientific">科学天文</option>
+        <option value="minimal-ui">极简界面</option>
+      </select>
+    </div>
+    <button type="button" id="btnExplore" aria-pressed="false">探索拖拽</button>
+    <button type="button" id="btnSolar" class="tw-scientific-only" aria-pressed="false">真太阳时近似</button>
+    <button type="button" id="btnSecondary" aria-pressed="true">副环：节气·黄道</button>
+  </div>
+
+  <main class="tw-app">
+    <div class="tw-stage" id="twStage">
+      <div class="tw-bg-fx" aria-hidden="true">
+        <div class="tw-nebula"></div>
+        <div class="tw-stars"></div>
+        <div class="tw-grain"></div>
+      </div>
+
+      <svg class="tw-svg-root" viewBox="-100 -100 200 200" aria-label="时轮主盘">
+        <defs>
+          <filter id="twGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.2" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <linearGradient id="twGradOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:var(--tw-ring1)" />
+            <stop offset="100%" style="stop-color:var(--tw-ring2)" />
+          </linearGradient>
+        </defs>
+
+        <g class="tw-secondary-ring" id="twSecondary"></g>
+        <g class="tw-cross-layer" id="twCross"></g>
+
+        <g id="twOuterRing"></g>
+        <g id="twInnerRing"></g>
+
+        <g id="twPointer" filter="url(#twGlow)">
+          <line x1="0" y1="0" x2="0" y2="-88" stroke="var(--tw-active)" stroke-width="1.2" stroke-linecap="round" opacity="0.85" />
+          <circle cx="0" cy="0" r="3" fill="var(--tw-active)" opacity="0.9" />
+        </g>
+        <circle cx="0" cy="0" r="99" fill="none" stroke="url(#twGradOuter)" stroke-width="0.35" opacity="0.5" />
+        <circle cx="0" cy="0" r="46" fill="none" stroke="var(--tw-ring1)" stroke-width="0.25" opacity="0.4" />
+      </svg>
+
+      <div class="tw-hub">
+        <div class="tw-time-digital" id="twDigital">00:00:00</div>
+        <div class="tw-time-ganzhi" id="twGanzhi">——</div>
+        <div class="tw-time-meta" id="twMeta"></div>
+      </div>
+    </div>
+  </main>
+
+  <p class="tw-legend">
+    外环十二地支对应十二时辰（各 2 小时）；内环十天干按日干支推算时干，随实时旋转与地支构成「时柱」。
+    <span class="tw-scientific-only">真太阳时：按经度修正平太阳时（近似）。</span>
+  </p>
+  <p class="tw-drag-hint" id="twDragHint">按住盘面拖拽可手动旋转；再次点「探索拖拽」恢复实时。</p>
+
+  <aside class="tw-detail-panel" id="twDetail" aria-hidden="true">
+    <button type="button" class="tw-detail-close" id="twDetailClose" aria-label="关闭">×</button>
+    <h3 id="twDetailTitle">—</h3>
+    <p id="twDetailBody"></p>
+    <dl class="tw-kv" id="twDetailKv"></dl>
+  </aside>
+
+  <script>
+(function () {
+  'use strict';
+
+  /** ========== Data: Heavenly Stems & Earthly Branches ========== */
+  const STEMS = [
+    { id: 0, han: '甲', pinyin: 'Jiǎ', element: '木', elementEn: 'Wood', yang: true,
+      color: '#2d8a54', planet: '木星', physics: '生长势 / 弹性形变', abstract: '生发 · 曲直' },
+    { id: 1, han: '乙', pinyin: 'Yǐ', element: '木', elementEn: 'Wood', yang: false,
+      color: '#5cb87a', planet: '木星', physics: '柔性耦合 / 共振', abstract: '条达 · 缠绕' },
+    { id: 2, han: '丙', pinyin: 'Bǐng', element: '火', elementEn: 'Fire', yang: true,
+      color: '#e85d3a', planet: '火星', physics: '热辐射 / 等离子激发', abstract: '炎上 · 宣通' },
+    { id: 3, han: '丁', pinyin: 'Dīng', element: '火', elementEn: 'Fire', yang: false,
+      color: '#ff8c69', planet: '火星', physics: '局域高温 / 发光', abstract: '灯烛 · 内化' },
+    { id: 4, han: '戊', pinyin: 'Wù', element: '土', elementEn: 'Earth', yang: true,
+      color: '#a67c52', planet: '地球', physics: '质量聚集 / 引力势阱', abstract: '承载 · 枢纽' },
+    { id: 5, han: '己', pinyin: 'Jǐ', element: '土', elementEn: 'Earth', yang: false,
+      color: '#c4a574', planet: '地球', physics: '土壤介质 / 吸附', abstract: '滋养 · 收纳' },
+    { id: 6, han: '庚', pinyin: 'Gēng', element: '金', elementEn: 'Metal', yang: true,
+      color: '#9aa3ad', planet: '金星', physics: '金属键 / 剪切强度', abstract: '从革 · 决断' },
+    { id: 7, han: '辛', pinyin: 'Xīn', element: '金', elementEn: 'Metal', yang: false,
+      color: '#c8cdd4', planet: '金星', physics: '晶格散射 / 反射', abstract: '珠玉 · 清润' },
+    { id: 8, han: '壬', pinyin: 'Rén', element: '水', elementEn: 'Water', yang: true,
+      color: '#3d7ea6', planet: '水星', physics: '流体对流 / 潮汐', abstract: '润下 · 奔流' },
+    { id: 9, han: '癸', pinyin: 'Guǐ', element: '水', elementEn: 'Water', yang: false,
+      color: '#6ba3c7', planet: '水星', physics: '毛细 / 溶解扩散', abstract: '雨露 · 渗透' }
+  ];
+
+  const BRANCHES = [
+    { id: 0, han: '子', pinyin: 'Zǐ', animal: '鼠', hours: '23:00–01:00',
+      west: '摩羯座', westEn: 'Capricorn', myth: '混沌初开 · 种子入土',
+      solar: '大雪–冬至', angleStart: 23 },
+    { id: 1, han: '丑', pinyin: 'Chǒu', animal: '牛', hours: '01:00–03:00',
+      west: '水瓶座', westEn: 'Aquarius', myth: '耕耘奠基 · 冻土之下',
+      solar: '小寒–大寒', angleStart: 1 },
+    { id: 2, han: '寅', pinyin: 'Yín', animal: '虎', hours: '03:00–05:00',
+      west: '双鱼座', westEn: 'Pisces', myth: '阳气萌动 · 雷在地中',
+      solar: '立春–雨水', angleStart: 3 },
+    { id: 3, han: '卯', pinyin: 'Mǎo', animal: '兔', hours: '05:00–07:00',
+      west: '白羊座', westEn: 'Aries', myth: '日出之门 · 木气当令',
+      solar: '惊蛰–春分', angleStart: 5 },
+    { id: 4, han: '辰', pinyin: 'Chén', animal: '龙', hours: '07:00–09:00',
+      west: '金牛座', westEn: 'Taurus', myth: '云行雨施 · 水库之象',
+      solar: '清明–谷雨', angleStart: 7 },
+    { id: 5, han: '巳', pinyin: 'Sì', animal: '蛇', hours: '09:00–11:00',
+      west: '双子座', westEn: 'Gemini', myth: '阳气盛极将转 · 智慧之形',
+      solar: '立夏–小满', angleStart: 9 },
+    { id: 6, han: '午', pinyin: 'Wǔ', animal: '马', hours: '11:00–13:00',
+      west: '巨蟹座', westEn: 'Cancer', myth: '日正当中 · 阳极阴生',
+      solar: '芒种–夏至', angleStart: 11 },
+    { id: 7, han: '未', pinyin: 'Wèi', animal: '羊', hours: '13:00–15:00',
+      west: '狮子座', westEn: 'Leo', myth: '草木成实 · 温养',
+      solar: '小暑–大暑', angleStart: 13 },
+    { id: 8, han: '申', pinyin: 'Shēn', animal: '猴', hours: '15:00–17:00',
+      west: '处女座', westEn: 'Virgo', myth: '收敛肃杀 · 金气初显',
+      solar: '立秋–处暑', angleStart: 15 },
+    { id: 9, han: '酉', pinyin: 'Yǒu', animal: '鸡', hours: '17:00–19:00',
+      west: '天秤座', westEn: 'Libra', myth: '日落门关 · 决断与平衡',
+      solar: '白露–秋分', angleStart: 17 },
+    { id: 10, han: '戌', pinyin: 'Xū', animal: '狗', hours: '19:00–21:00',
+      west: '天蝎座', westEn: 'Scorpio', myth: '守夜 · 库藏之火',
+      solar: '寒露–霜降', angleStart: 19 },
+    { id: 11, han: '亥', pinyin: 'Hài', animal: '猪', hours: '21:00–23:00',
+      west: '射手座', westEn: 'Sagittarius', myth: '万物归根 · 水归沧海',
+      solar: '立冬–小雪', angleStart: 21 }
+  ];
+
+  /** 黄道十二宫刻度（副环）：每宫 30°，白羊起点为春分（约 3 月 21 日） */
+  const ZODIAC = [
+    { name: '白羊', en: 'Aries', sym: '♈' },
+    { name: '金牛', en: 'Taurus', sym: '♉' },
+    { name: '双子', en: 'Gemini', sym: '♊' },
+    { name: '巨蟹', en: 'Cancer', sym: '♋' },
+    { name: '狮子', en: 'Leo', sym: '♌' },
+    { name: '处女', en: 'Virgo', sym: '♍' },
+    { name: '天秤', en: 'Libra', sym: '♎' },
+    { name: '天蝎', en: 'Scorpio', sym: '♏' },
+    { name: '射手', en: 'Sagittarius', sym: '♐' },
+    { name: '摩羯', en: 'Capricorn', sym: '♑' },
+    { name: '水瓶', en: 'Aquarius', sym: '♒' },
+    { name: '双鱼', en: 'Pisces', sym: '♓' }
+  ];
+
+  /** ========== Calendar math ========== */
+  const REF_JIAZI = Date.UTC(1984, 1, 2); // 甲子日
+
+  function getDayGanzhi(d) {
+    const utcMid = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+    const days = Math.round((utcMid - REF_JIAZI) / 86400000);
+    const idx = ((days % 60) + 60) % 60;
+    const stem = idx % 10;
+    const branch = idx % 12;
+    return { stem, branch, idx };
+  }
+
+  function getBranchIndexFromTime(h, m) {
+    const t = h + m / 60;
+    if (t >= 23 || t < 1) return 0;
+    if (t < 3) return 1;
+    if (t < 5) return 2;
+    if (t < 7) return 3;
+    if (t < 9) return 4;
+    if (t < 11) return 5;
+    if (t < 13) return 6;
+    if (t < 15) return 7;
+    if (t < 17) return 8;
+    if (t < 19) return 9;
+    if (t < 21) return 10;
+    return 11;
+  }
+
+  /** 时干：由日干决定子时天干 */
+  function getHourStem(dayStem, branchIndex) {
+    const group = dayStem % 5;
+    const base = [0, 2, 4, 6, 8][group];
+    return (base + branchIndex) % 10;
+  }
+
+  /** 经度修正：分钟偏移（东为正）。标准经度 120° 为中国「北京时间」基准 */
+  function getSolarTimeMinutes(date, longitudeDeg, standardMeridian) {
+    const diffMin = (longitudeDeg - standardMeridian) * 4;
+    const eot = equationOfTime(date);
+    return diffMin + eot;
+  }
+
+  function equationOfTime(d) {
+    const start = Date.UTC(d.getFullYear(), 0, 1);
+    const day = (d.getTime() - start) / 86400000;
+    const B = 2 * Math.PI * (day - 81) / 365.25;
+    return 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+  }
+
+  /** 角度：0° = 顶部（午夜方向），顺时针为正，与 24h 一致 */
+  function timeToAngle(h, m, s) {
+    const frac = (h + m / 60 + s / 3600) / 24;
+    return frac * 360;
+  }
+
+  function polarToXY(r, deg) {
+    const rad = ((deg - 90) * Math.PI) / 180;
+    return { x: r * Math.cos(rad), y: r * Math.sin(rad) };
+  }
+
+  function wedgePath(r0, r1, a0, a1) {
+    const p0s = polarToXY(r0, a0);
+    const p0e = polarToXY(r0, a1);
+    const p1e = polarToXY(r1, a1);
+    const p1s = polarToXY(r1, a0);
+    const large = a1 - a0 > 180 ? 1 : 0;
+    return [
+      'M', p0s.x, p0s.y,
+      'A', r0, r0, 0, large, 1, p0e.x, p0e.y,
+      'L', p1e.x, p1e.y,
+      'A', r1, r1, 0, large, 0, p1s.x, p1s.y,
+      'Z'
+    ].join(' ');
+  }
+
+  /** ========== DOM build ========== */
+  const R_OUT0 = 92;
+  const R_OUT1 = 72;
+  const R_IN0 = 68;
+  const R_IN1 = 48;
+  const R_SEC0 = 98;
+  const R_SEC1 = 94;
+
+  const twOuter = document.getElementById('twOuterRing');
+  const twInner = document.getElementById('twInnerRing');
+  const twPointer = document.getElementById('twPointer');
+  const twSecondary = document.getElementById('twSecondary');
+  const twCross = document.getElementById('twCross');
+
+  function buildOuterRing() {
+    twOuter.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+      const b = BRANCHES[i];
+      /** 地支 i：时辰中心在 i×2 小时 → 方位角 i×30°（0°=子正中对午夜） */
+      const mid = i * 30;
+      const start = mid - 15;
+      const end = mid + 15;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', wedgePath(R_OUT1, R_OUT0, start, end));
+      path.setAttribute('class', 'tw-seg-branch');
+      path.dataset.type = 'branch';
+      path.dataset.id = String(i);
+      path.setAttribute('fill', 'transparent');
+      path.setAttribute('stroke', 'rgba(128,160,200,0.15)');
+      path.setAttribute('stroke-width', '0.4');
+      twOuter.appendChild(path);
+
+      const pos = polarToXY((R_OUT0 + R_OUT1) / 2, mid);
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ')');
+      const t1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t1.setAttribute('class', 'tw-label-branch');
+      t1.textContent = b.han;
+      const t2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t2.setAttribute('class', 'tw-sub');
+      t2.setAttribute('y', '12');
+      t2.textContent = b.animal;
+      g.appendChild(t1);
+      g.appendChild(t2);
+      twOuter.appendChild(g);
+    }
+  }
+
+  function buildInnerRing() {
+    twInner.innerHTML = '';
+    const step = 360 / 10;
+    for (let i = 0; i < 10; i++) {
+      const s = STEMS[i];
+      const mid = i * step;
+      const start = mid - step / 2;
+      const end = mid + step / 2;
+
+      var item = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      item.setAttribute('class', 'tw-stem-item');
+      item.setAttribute('data-stem-index', String(i));
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', wedgePath(R_IN1, R_IN0, start, end));
+      path.setAttribute('class', 'tw-seg-stem');
+      path.dataset.type = 'stem';
+      path.dataset.id = String(i);
+      item.appendChild(path);
+
+      const pos = polarToXY((R_IN0 + R_IN1) / 2, mid);
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('class', 'tw-stem-label');
+      g.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ')');
+      const t1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t1.setAttribute('class', 'tw-label-stem');
+      t1.setAttribute('fill', s.color);
+      t1.textContent = s.han;
+      const t2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t2.setAttribute('class', 'tw-sub');
+      t2.setAttribute('y', '11');
+      t2.textContent = s.element;
+      g.appendChild(t1);
+      g.appendChild(t2);
+      item.appendChild(g);
+      twInner.appendChild(item);
+    }
+  }
+
+  function buildSecondary() {
+    twSecondary.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+      const z = ZODIAC[i];
+      const start = i * 30 - 90 - 15;
+      const end = start + 30;
+      const mid = (start + end) / 2;
+      const a0 = polarToXY(R_SEC1, start);
+      const a1 = polarToXY(R_SEC1, end);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', a0.x);
+      line.setAttribute('y1', a0.y);
+      line.setAttribute('x2', a1.x);
+      line.setAttribute('y2', a1.y);
+      line.setAttribute('stroke', 'var(--tw-ring1)');
+      line.setAttribute('stroke-width', '0.35');
+      line.setAttribute('opacity', '0.45');
+      twSecondary.appendChild(line);
+      const pos = polarToXY((R_SEC0 + R_SEC1) / 2, mid);
+      const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('x', pos.x);
+      txt.setAttribute('y', pos.y);
+      txt.setAttribute('class', 'tw-sub');
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('dominant-baseline', 'middle');
+      txt.setAttribute('font-size', '5');
+      txt.textContent = z.sym;
+      twSecondary.appendChild(txt);
+    }
+  }
+
+  function buildCross() {
+    twCross.innerHTML = '';
+    for (let a = 0; a < 360; a += 30) {
+      const p = polarToXY(96, a);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', 0);
+      line.setAttribute('y1', 0);
+      line.setAttribute('x2', p.x);
+      line.setAttribute('y2', p.y);
+      twCross.appendChild(line);
+    }
+  }
+
+  buildOuterRing();
+  buildInnerRing();
+  buildSecondary();
+  buildCross();
+
+  /** ========== State ========== */
+  let exploreMode = false;
+  let manualRot = 0;
+  let innerManual = 0;
+  /** 进入探索时冻结的时角与干支，避免拖拽时盘面仍被实时带动 */
+  let exploreSnap = null;
+  let useSolar = false;
+  const defaultLon = 116.4;
+  const standardMeridian = 120;
+
+  const stage = document.getElementById('twStage');
+  const twDigital = document.getElementById('twDigital');
+  const twGanzhi = document.getElementById('twGanzhi');
+  const twMeta = document.getElementById('twMeta');
+
+  function applyClockTime(date) {
+    let h = date.getHours();
+    let m = date.getMinutes();
+    let s = date.getSeconds();
+    if (useSolar) {
+      const adj = getSolarTimeMinutes(date, defaultLon, standardMeridian);
+      let total = h * 3600 + m * 60 + s + adj * 60;
+      total = ((total % 86400) + 86400) % 86400;
+      h = Math.floor(total / 3600);
+      m = Math.floor((total % 3600) / 60);
+      s = Math.floor(total % 60);
+    }
+    return { h, m, s, date };
+  }
+
+  function tick() {
+    const now = new Date();
+    const { h, m, s } = applyClockTime(now);
+    const liveAngle = timeToAngle(h, m, s);
+    let angle = liveAngle;
+
+    const dg = getDayGanzhi(now);
+    const liveBi = getBranchIndexFromTime(h, m);
+    const liveHi = getHourStem(dg.stem, liveBi);
+    let bi = liveBi;
+    let hi = liveHi;
+    if (exploreMode && exploreSnap) {
+      angle = exploreSnap.angle;
+      bi = exploreSnap.bi;
+      hi = exploreSnap.hi;
+    }
+    /** 外环：固定于真实时间方位。内环十天干：整环固定排列（每 36° 一格），不整组旋转，保证十字干始终可见。 */
+    const outerRot = exploreMode ? manualRot : 0;
+    const innerRot = exploreMode ? innerManual : 0;
+
+    twOuter.setAttribute('transform', 'rotate(' + outerRot + ')');
+    twInner.setAttribute('transform', 'rotate(' + innerRot + ')');
+    twPointer.setAttribute('transform', 'rotate(' + liveAngle + ')');
+
+    document.querySelectorAll('.tw-seg-branch').forEach(function (el, i) {
+      el.classList.toggle('is-active', i === bi);
+    });
+    document.querySelectorAll('.tw-stem-item').forEach(function (el, i) {
+      el.classList.toggle('is-active', i === hi);
+    });
+
+    const pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    twDigital.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+    const sh = STEMS[liveHi];
+    const br = BRANCHES[liveBi];
+    twGanzhi.textContent = sh.han + br.han + '时 · ' + sh.pinyin + br.pinyin;
+
+    const solarNote = useSolar ? '（真太阳时近似 · 经度 ' + defaultLon + '°）' : '（平太阳时 · 本地时区）';
+    twMeta.innerHTML =
+      '<span class="tw-mystical-only">' + br.hours + ' · ' + br.animal + ' · ' + br.west + '</span>' +
+      '<span class="tw-scientific-only">时角 ' + liveAngle.toFixed(2) + '° · 日干支序 ' + dg.idx + solarNote + '</span>';
+
+    requestAnimationFrame(function () {});
+  }
+
+  setInterval(tick, 1000 / 30);
+  tick();
+
+  /** ========== Theme & mode ========== */
+  const selTheme = document.getElementById('selTheme');
+  const selMode = document.getElementById('selMode');
+  function applyTheme(t) {
+    document.body.classList.remove('theme-cosmic', 'theme-ancient', 'theme-future', 'theme-minimal');
+    document.body.classList.add('theme-' + t);
+    try { localStorage.setItem('tw-theme', t); } catch (e) {}
+  }
+  function applyMode(m) {
+    document.body.classList.remove('mode-mystical', 'mode-scientific', 'mode-minimal-ui');
+    document.body.classList.add('mode-' + m);
+    try { localStorage.setItem('tw-mode', m); } catch (e) {}
+  }
+  selTheme.addEventListener('change', function () { applyTheme(selTheme.value); });
+  selMode.addEventListener('change', function () { applyMode(selMode.value); });
+  try {
+    const st = localStorage.getItem('tw-theme');
+    if (st) { selTheme.value = st; applyTheme(st); }
+    const sm = localStorage.getItem('tw-mode');
+    if (sm) { selMode.value = sm; applyMode(sm); }
+  } catch (e) {}
+
+  /** ========== Detail panel ========== */
+  const detail = document.getElementById('twDetail');
+  const detailTitle = document.getElementById('twDetailTitle');
+  const detailBody = document.getElementById('twDetailBody');
+  const detailKv = document.getElementById('twDetailKv');
+
+  function openDetail(title, body, rows) {
+    detailTitle.textContent = title;
+    detailBody.textContent = body;
+    detailKv.innerHTML = '';
+    rows.forEach(function (r) {
+      const dt = document.createElement('dt');
+      dt.textContent = r[0];
+      const dd = document.createElement('dd');
+      dd.textContent = r[1];
+      detailKv.appendChild(dt);
+      detailKv.appendChild(dd);
+    });
+    detail.classList.add('tw-detail--open');
+    detail.setAttribute('aria-hidden', 'false');
+  }
+  function closeDetail() {
+    detail.classList.remove('tw-detail--open');
+    detail.setAttribute('aria-hidden', 'true');
+  }
+  document.getElementById('twDetailClose').addEventListener('click', closeDetail);
+
+  stage.addEventListener('click', function (e) {
+    const t = e.target;
+    if (t.dataset && t.dataset.type === 'branch') {
+      const b = BRANCHES[+t.dataset.id];
+      openDetail(
+        '地支 · ' + b.han + '（' + b.pinyin + '）',
+        '时辰：' + b.hours + '。生肖：' + b.animal + '。对应西方黄道近似：' + b.west + '（' + b.westEn + '）。节气段：' + b.solar + '。',
+        [
+          ['原型象征', b.myth],
+          ['时段', b.hours],
+          ['生肖', b.animal]
+        ]
+      );
+      return;
+    }
+    var stemItem = t.closest && t.closest('.tw-stem-item');
+    if (stemItem) {
+      var sid = stemItem.getAttribute('data-stem-index');
+      if (sid == null) return;
+      const st = STEMS[+sid];
+      openDetail(
+        '天干 · ' + st.han + '（' + st.pinyin + '）',
+        st.abstract + '。五行：' + st.element + '（' + st.elementEn + '）。',
+        [
+          ['五行配色', st.color],
+          ['行星类比', st.planet],
+          ['物理直觉', st.physics]
+        ]
+      );
+      return;
+    }
+  });
+
+  /** ========== Explore drag ========== */
+  const btnExplore = document.getElementById('btnExplore');
+  let drag = false;
+  let lastX = 0;
+  let lastY = 0;
+
+  btnExplore.addEventListener('click', function () {
+    exploreMode = !exploreMode;
+    btnExplore.classList.toggle('tw-btn-on', exploreMode);
+    btnExplore.setAttribute('aria-pressed', exploreMode ? 'true' : 'false');
+    if (exploreMode) {
+      const now = new Date();
+      const ap = applyClockTime(now);
+      const ang = timeToAngle(ap.h, ap.m, ap.s);
+      const b = getBranchIndexFromTime(ap.h, ap.m);
+      const d = getDayGanzhi(now);
+      const he = getHourStem(d.stem, b);
+      exploreSnap = { angle: ang, bi: b, hi: he };
+      manualRot = 0;
+      innerManual = 0;
+    } else {
+      manualRot = 0;
+      innerManual = 0;
+      exploreSnap = null;
+    }
+  });
+
+  stage.addEventListener('pointerdown', function (e) {
+    if (!exploreMode) return;
+    drag = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    stage.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!exploreMode || !drag) return;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    const delta = (dx + dy) * 0.35;
+    manualRot += delta;
+    innerManual += delta;
+  });
+  stage.addEventListener('pointerup', function () { drag = false; });
+  stage.addEventListener('pointercancel', function () { drag = false; });
+
+  /** ========== Solar toggle ========== */
+  const btnSolar = document.getElementById('btnSolar');
+  btnSolar.addEventListener('click', function () {
+    useSolar = !useSolar;
+    btnSolar.classList.toggle('tw-btn-on', useSolar);
+    btnSolar.setAttribute('aria-pressed', useSolar ? 'true' : 'false');
+  });
+
+  const btnSecondary = document.getElementById('btnSecondary');
+  btnSecondary.addEventListener('click', function () {
+    const on = btnSecondary.classList.toggle('tw-btn-on');
+    twSecondary.style.display = on ? '' : 'none';
+    btnSecondary.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+})();
+  </script>
+</body>
+</html>

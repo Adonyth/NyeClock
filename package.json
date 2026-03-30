@@ -1,0 +1,8 @@
+{
+  "name": "nye-clock-adonyth",
+  "private": true,
+  "description": "Cloudflare Pages: npm run build keeps index.html and tw_.html identical (single source for auth UI).",
+  "scripts": {
+    "build": "cp tw_.html index.html"
+  }
+}

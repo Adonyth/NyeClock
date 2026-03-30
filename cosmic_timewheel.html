@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宇宙时轮 · Cosmic Timewheel</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000005;overflow:hidden;font-family:'STSong','SimSun',serif}
+canvas{display:block}
+.panel{position:fixed;background:rgba(2,8,20,0.85);border:1px solid rgba(200,170,60,0.35);border-radius:12px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:12px 18px;color:#c8b060;pointer-events:auto}
+#top-panel{top:16px;left:50%;transform:translateX(-50%);text-align:center;min-width:480px}
+#top-panel h1{font-size:1.3rem;letter-spacing:0.18em;color:#f0d880;margin-bottom:8px;font-weight:normal}
+#pillars{display:flex;gap:14px;justify-content:center;margin-bottom:6px}
+.pillar{display:flex;flex-direction:column;align-items:center;gap:3px}
+.pillar-label{font-size:0.65rem;color:#8a7a40;letter-spacing:0.1em}
+.pillar-gz{font-size:1.6rem;color:#f0d880;line-height:1;letter-spacing:0.05em}
+#datetime-display{font-size:0.7rem;color:#8a9ab0;letter-spacing:0.08em;margin-top:4px}
+#loc-panel{bottom:20px;right:20px;font-size:0.75rem}
+#loc-panel label{display:block;margin-bottom:6px;color:#8a9ab0}
+#loc-panel input{background:rgba(10,20,40,0.7);border:1px solid rgba(200,170,60,0.3);color:#f0d880;padding:3px 8px;border-radius:5px;width:90px;font-size:0.8rem;outline:none}
+#speed-panel{bottom:20px;left:20px;min-width:200px}
+#speed-panel label{font-size:0.72rem;color:#8a9ab0;display:block;margin-bottom:6px}
+#speed-slider{width:100%;accent-color:#f0d880;cursor:pointer}
+#speed-label{font-size:0.7rem;color:#f0d880;margin-top:4px;text-align:center}
+#hint-panel{bottom:20px;left:50%;transform:translateX(-50%);font-size:0.65rem;color:#4a5a70;padding:6px 14px}
+</style>
+</head>
+<body>
+<div id="top-panel" class="panel">
+  <h1>宇宙时轮 · Cosmic Timewheel</h1>
+  <div id="pillars">
+    <div class="pillar"><span class="pillar-label">年</span><span class="pillar-gz" id="gz-year">甲子</span></div>
+    <div class="pillar"><span class="pillar-label">月</span><span class="pillar-gz" id="gz-month">甲子</span></div>
+    <div class="pillar"><span class="pillar-label">日</span><span class="pillar-gz" id="gz-day">甲子</span></div>
+    <div class="pillar"><span class="pillar-label">时</span><span class="pillar-gz" id="gz-hour">甲子</span></div>
+  </div>
+  <div id="datetime-display">--</div>
+</div>
+<div id="loc-panel" class="panel">
+  <label>纬度 Lat: <input type="number" id="lat-input" value="39.9" step="0.1" min="-90" max="90"></label>
+  <label>经度 Lon: <input type="number" id="lon-input" value="116.4" step="0.1" min="-180" max="180"></label>
+</div>
+<div id="speed-panel" class="panel">
+  <label>时间速度 Time Speed</label>
+  <input type="range" id="speed-slider" min="0" max="7" step="1" value="0">
+  <div id="speed-label">Real-time</div>
+</div>
+<div id="hint-panel" class="panel">Drag to look · Scroll to zoom · 拖拽环视 · 滚轮缩放</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===================== GANZHI CALENDAR =====================
+var GAN=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+var ZHI=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+function jd(date){return date.getTime()/86400000+2440587.5}
+function gmstDeg(date){
+  var t=jd(date),T=(t-2451545)/36525;
+  return((280.46061837+360.98564736629*(t-2451545)+T*T*(0.000387933-T/38710000))%360+360)%360;
+}
+function lstDeg(date,lonDeg){return(gmstDeg(date)+lonDeg+360)%360}
+function sunEclLon(date){
+  var t=jd(date),T=(t-2451545)/36525;
+  var L0=280.46646+36000.76983*T;
+  var M=(357.52911+35999.05029*T)*Math.PI/180;
+  var C=(1.914602-0.004817*T)*Math.sin(M)+(0.019993-0.000101*T)*Math.sin(2*M);
+  return((L0+C)%360+360)%360;
+}
+function sunEquatorial(date){
+  var lam=sunEclLon(date)*Math.PI/180;
+  var eps=23.4393*Math.PI/180;
+  var ra=Math.atan2(Math.sin(lam)*Math.cos(eps),Math.cos(lam));
+  var dec=Math.asin(Math.sin(lam)*Math.sin(eps));
+  return{ra:ra,dec:dec};
+}
+function ganzhiYear(y){var s=((y-4)%10+10)%10,b=((y-4)%12+12)%12;return GAN[s]+ZHI[b]}
+function ganzhiDay(date){var jdn=Math.floor(jd(date)+0.5);var off=((jdn-2440587+49)%60+60)%60;return GAN[off%10]+ZHI[off%12]}
+function ganzhiMonth(date){var m=date.getUTCMonth(),y=date.getUTCFullYear();var mb=((m+2)%12+12)%12;var ys=((y-4)%10+10)%10;var ms=((ys*2+mb)%10+10)%10;return GAN[ms]+ZHI[mb]}
+function ganzhiHour(date,lonDeg){var utcH=date.getUTCHours()+date.getUTCMinutes()/60+date.getUTCSeconds()/3600;var localH=(utcH+lonDeg/15+24)%24;var bi=Math.floor((localH+1)/2)%12;var dGZ=ganzhiDay(date);var ds=GAN.indexOf(dGZ[0]);var hs=((ds*2+bi)%10+10)%10;return GAN[hs]+ZHI[bi]}
+function ganzhiHourBranch(date,lonDeg){var utcH=date.getUTCHours()+date.getUTCMinutes()/60+date.getUTCSeconds()/3600;var localH=(utcH+lonDeg/15+24)%24;return Math.floor((localH+1)/2)%12;}
+
+// ===================== ASTRONOMICAL MATH =====================
+function eqToHorMatrix(lst_rad,lat_rad){
+  var cL=Math.cos(lst_rad),sL=Math.sin(lst_rad);
+  var cPhi=Math.cos(lat_rad),sPhi=Math.sin(lat_rad);
+  var m=new THREE.Matrix4(),e=m.elements;
+  e[0]=-sL;     e[1]=cPhi*cL; e[2]=-sPhi*cL; e[3]=0;
+  e[4]=cL;      e[5]=cPhi*sL; e[6]=-sPhi*sL; e[7]=0;
+  e[8]=0;       e[9]=sPhi;    e[10]=cPhi;    e[11]=0;
+  e[12]=0;e[13]=0;e[14]=0;e[15]=1;
+  return m;
+}
+function raDecToVec(ra_deg,dec_deg,r){
+  var ra=ra_deg*Math.PI/180,dec=dec_deg*Math.PI/180;
+  return new THREE.Vector3(Math.cos(dec)*Math.cos(ra)*r,Math.sin(dec)*r,Math.cos(dec)*Math.sin(ra)*r);
+}
+
+// ===================== STAR CATALOG (BSC top-100) =====================
+// [RA_deg, Dec_deg, Vmag, BV]
+var BSC=[
+  [101.287,-16.716,-1.46,0.00],   // Sirius
+  [95.988,-52.696,-0.74,0.15],    // Canopus
+  [219.921,-60.835,-0.27,0.71],   // Rigil Kentaurus
+  [213.915,19.182,-0.05,1.23],    // Arcturus
+  [279.235,38.784,0.03,0.00],     // Vega
+  [79.172,45.998,0.08,0.80],      // Capella
+  [78.634,-8.202,0.13,-0.03],     // Rigel
+  [114.825,5.225,0.34,0.42],      // Procyon
+  [24.429,-57.237,0.46,-0.16],    // Achernar
+  [88.793,7.407,0.50,1.50],       // Betelgeuse
+  [210.956,-60.374,0.61,-0.23],   // Hadar
+  [186.650,-63.099,0.77,-0.24],   // Acrux
+  [297.696,8.868,0.77,0.22],      // Altair
+  [68.980,16.509,0.85,1.54],      // Aldebaran
+  [247.352,-26.432,0.91,1.83],    // Antares
+  [201.298,-11.161,0.98,-0.24],   // Spica
+  [116.329,28.026,1.14,1.00],     // Pollux
+  [344.413,-29.622,1.16,0.14],    // Fomalhaut
+  [310.358,45.280,1.25,0.09],     // Deneb
+  [152.093,11.967,1.35,-0.11],    // Regulus
+  [104.656,-28.972,1.50,-0.21],   // Adhara
+  [113.650,31.888,1.58,0.03],     // Castor
+  [81.283,6.350,1.64,-0.22],      // Bellatrix
+  [81.571,28.607,1.65,-0.13],     // Alnath
+  [193.507,55.960,1.76,-0.02],    // Alioth
+  [165.932,61.751,1.79,1.06],     // Dubhe
+  [206.886,49.313,1.86,-0.02],    // Alkaid
+  [89.930,44.947,1.90,0.08],      // Menkalinan
+  [84.053,-1.202,1.70,-0.19],     // Alnilam
+  [85.190,-1.943,1.74,-0.21],     // Alnitak
+  [83.002,0.299,2.23,-0.22],      // Mintaka
+  [263.402,-37.104,1.63,-0.22],   // Shaula
+  [187.791,-57.113,1.63,1.59],    // Gacrux
+  [84.688,-9.670,2.09,-0.17],     // Saiph
+  [269.152,51.489,2.24,1.52],     // Eltanin
+  [37.954,89.264,1.98,0.60],      // Polaris
+  [233.672,26.715,2.23,0.03],     // Alphecca
+  [222.676,74.156,2.08,1.47],     // Kochab
+  [10.127,56.537,2.24,0.37],      // Schedar
+  [200.981,54.925,2.27,0.02],     // Mizar
+  [165.460,56.382,2.37,0.03],     // Merak
+  [178.458,53.695,2.44,0.04],     // Phad (Phecda)
+  [2.294,59.150,2.27,0.34],       // Caph
+  [17.433,35.620,2.06,1.58],      // Mirach
+  [2.097,29.090,2.07,0.10],       // Alpheratz
+  [31.793,23.463,2.00,1.15],      // Hamal
+  [346.190,15.205,2.49,-0.09],    // Markab
+  [3.309,15.184,2.83,-0.23],      // Algenib
+  [326.047,9.875,2.38,1.52],      // Enif
+  [283.816,-26.297,2.02,-0.20],   // Nunki
+  [263.733,12.560,2.08,0.15],     // Rasalhague
+  [177.265,14.572,2.14,0.09],     // Denebola
+  [141.897,-8.659,1.99,1.44],     // Alphard
+  [236.067,6.426,2.65,1.16],      // Unukalhai
+  [319.645,62.585,2.44,0.22],     // Alderamin
+  [120.896,-40.003,2.25,-0.27],   // Zeta Puppis (Naos)
+  [183.786,-17.542,2.58,0.00],    // Gienah
+  [79.250,-13.177,2.09,1.28],     // Cursa
+  [188.597,69.331,2.30,0.58],     // Pherkad
+  [26.019,-15.938,2.04,0.83],     // Diphda
+  [75.619,41.234,2.16,0.18],      // Hassaleh
+  [220.482,-47.388,2.30,-0.20],   // Menkent
+  [152.644,-49.427,2.21,-0.18],   // Avior
+  [114.031,-26.393,2.45,1.72],    // Wezen
+  [143.906,-56.735,2.23,-0.20],   // Tureis
+  [41.270,10.113,2.65,0.37],      // Menkar
+  [108.347,-26.299,2.45,1.72],    // Aludra
+  [307.272,60.717,2.48,0.58],     // Deneb Kaitos
+  [315.542,5.248,2.99,0.12],      // Sadalsuud
+  [322.889,10.832,2.96,0.38],     // Sadalmelik
+  [85.440,21.143,2.84,0.18],      // Taygeta (Pleiades)
+  [56.871,24.105,2.87,0.09],      // Alcyone
+  [282.520,-10.622,2.76,0.24],    // Kaus Australis
+  [278.802,-26.297,2.60,1.01],    // Kaus Media
+  [271.452,-30.424,2.70,0.55],    // Kaus Borealis
+  [253.084,-38.017,1.62,-0.20],   // Lesath
+  [266.897,-40.615,2.43,0.38],    // Eta Oph
+  [87.457,-34.074,2.40,0.16],     // Phact
+  [262.608,-37.296,2.70,0.08],    // Eta Sco
+  [157.578,-22.117,2.70,0.57],    // Alphard B
+  [345.945,-17.987,2.11,0.99],    // Ankaa
+  [130.026,-35.308,2.45,1.50],    // Regor
+  [106.027,-28.972,2.45,0.37],    // Adhara B
+  [168.527,20.524,2.56,0.25],     // Zosma
+  [95.740,-17.956,2.77,1.73],     // Mirzam
+  [147.787,59.381,2.68,1.28],     // Muscida
+  [280.894,-62.187,2.85,0.52],    // Peacock
+  [257.594,36.809,2.74,0.52],     // Yed Prior
+  [211.671,-36.370,2.75,0.14],    // Mu Cen
+  [83.858,-5.909,2.76,0.14],      // Mintaka B
+  [113.789,31.845,2.98,0.03],     // Pollux B
+  [140.528,34.392,2.97,0.63],     // Praecipua
+  [246.356,-26.114,2.43,-0.04],   // Han
+  [45.570,-93.000,2.54,0.95],     // Ankaa B - placeholder
+  [262.960,37.251,2.82,1.27],     // Yed Posterior
+  [252.166,-59.041,2.30,-0.18],   // Atria
+  [68.499,19.180,2.87,0.17],      // Alnath B
+  [97.204,-7.033,2.98,0.00],      // Gomeisa
+  [244.580,-4.693,2.75,0.55],     // Cheleb
+];
+
+// ===================== THREE.JS SETUP =====================
+var renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setClearColor(0x000005,1);
+document.body.appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+var camera=new THREE.PerspectiveCamera(70,window.innerWidth/window.innerHeight,0.1,2000);
+camera.position.set(0,0,0);
+
+// celestialGroup holds all sky objects
+var celestialGroup=new THREE.Group();
+celestialGroup.matrixAutoUpdate=false;
+scene.add(celestialGroup);
+
+// ===================== MILKY WAY SPHERE =====================
+var mwGeo=new THREE.SphereGeometry(490,64,48);
+var mwMat=new THREE.ShaderMaterial({
+  side:THREE.BackSide,
+  transparent:true,
+  depthWrite:false,
+  blending:THREE.AdditiveBlending,
+  uniforms:{
+    uNGP:{value:new THREE.Vector3(-0.8677,-0.1925,0.4559).normalize()},
+    uGC:{value:new THREE.Vector3(-0.0549,-0.8734,-0.4839).normalize()}
+  },
+  vertexShader:`
+    varying vec3 vDir;
+    void main(){
+      vDir=normalize(position);
+      gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+    }
+  `,
+  fragmentShader:`
+    varying vec3 vDir;
+    uniform vec3 uNGP;
+    uniform vec3 uGC;
+    // Hash & noise
+    float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    float hash3(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+    float noise3(vec3 p){
+      vec3 i=floor(p);vec3 f=fract(p);
+      vec3 u=f*f*(3.0-2.0*f);
+      return mix(
+        mix(mix(hash3(i),hash3(i+vec3(1,0,0)),u.x),
+            mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),u.x),u.y),
+        mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),u.x),
+            mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),u.x),u.y),u.z);
+    }
+    float fbm(vec3 p){
+      float v=0.0,a=0.5;
+      for(int i=0;i<4;i++){v+=a*noise3(p);p*=2.1;a*=0.5;}
+      return v;
+    }
+    void main(){
+      vec3 d=normalize(vDir);
+      float sinB=dot(d,uNGP);
+      float bWidth=exp(-sinB*sinB*90.0)*1.1+exp(-sinB*sinB*25.0)*0.4;
+      vec3 gc=normalize(uGC);
+      float gcDot=dot(d,gc);
+      float coreAngle=acos(clamp(gcDot,-1.0,1.0));
+      float core=exp(-coreAngle*coreAngle*8.0)*0.9;
+      float n=fbm(d*4.5+vec3(0.3,0.7,1.2));
+      float n2=fbm(d*9.0+vec3(1.1,2.3,0.5));
+      float texMod=n*0.6+n2*0.4;
+      float lane=1.0-smoothstep(0.0,0.15,abs(sinB+0.03*sin(atan(d.z,d.x)*3.0)));
+      float darkLane=lane*0.5*(texMod+0.3);
+      float bw2=bWidth*(0.6+texMod*0.8);
+      vec3 col=mix(vec3(0.03,0.04,0.10),vec3(0.75,0.72,0.62),bw2*0.65);
+      col+=vec3(0.9,0.7,0.4)*core*0.6;
+      col-=vec3(0.04,0.035,0.025)*darkLane;
+      float alpha=bw2*0.75+core*0.35;
+      alpha=clamp(alpha,0.0,0.85);
+      gl_FragColor=vec4(col,alpha);
+    }
+  `
+});
+var mwMesh=new THREE.Mesh(mwGeo,mwMat);
+celestialGroup.add(mwMesh);
+
+// ===================== STARS =====================
+// Build star data: catalog + procedural
+function bvToColor(bv){
+  // BV<-0.2 blue, 0 white, 0.6 yellow, 1.5 orange-red
+  var r,g,b;
+  if(bv<-0.2){r=0.5;g=0.6;b=1.0;}
+  else if(bv<0.0){var t=(bv+0.2)/0.2;r=0.5+t*0.5;g=0.6+t*0.4;b=1.0;}
+  else if(bv<0.6){var t=bv/0.6;r=1.0;g=1.0;b=1.0-t*0.7;}
+  else if(bv<1.5){var t=(bv-0.6)/0.9;r=1.0;g=1.0-t*0.4;b=0.3-t*0.3;}
+  else{r=1.0;g=0.6;b=0.0;}
+  return[r,g,b];
+}
+
+var starPositions=[];
+var starSizes=[];
+var starColors=[];
+
+// Catalog stars
+for(var i=0;i<BSC.length;i++){
+  var s=BSC[i];
+  var ra=s[0],dec=s[1],vmag=s[2],bv=s[3];
+  // clamp dec
+  dec=Math.max(-89.9,Math.min(89.9,dec));
+  var v=raDecToVec(ra,dec,490);
+  starPositions.push(v.x,v.y,v.z);
+  var sz=Math.min(14,Math.max(0.8,7.0-vmag*1.1));
+  starSizes.push(sz);
+  var c=bvToColor(bv);
+  starColors.push(c[0],c[1],c[2]);
+}
+
+// Procedural dim stars
+function galacticToEquatorial(l_deg,b_deg){
+  // NGP: RA=192.86, Dec=27.13, lon of GC: 122.93
+  var l=l_deg*Math.PI/180,b=b_deg*Math.PI/180;
+  var ra0=192.86*Math.PI/180,dec0=27.13*Math.PI/180,l0=122.93*Math.PI/180;
+  var x=Math.cos(b)*Math.cos(l-l0+Math.PI);
+  var y=Math.cos(b)*Math.sin(l-l0+Math.PI);
+  var z=Math.sin(b);
+  var dec=Math.asin(Math.sin(dec0)*z+Math.cos(dec0)*x);
+  var ra=ra0+Math.atan2(y,Math.cos(dec0)*z-Math.sin(dec0)*x);
+  return{ra:ra*180/Math.PI,dec:dec*180/Math.PI};
+}
+
+var rng=1.0;
+function lcg(){rng=(rng*1664525+1013904223)%4294967296;return rng/4294967296;}
+
+for(var i=0;i<2000;i++){
+  var ra_d,dec_d;
+  if(lcg()<0.70){
+    // galactic concentration
+    var l=lcg()*360;
+    var b=(lcg()-0.5)*2;
+    b=Math.asin(b)*180/Math.PI;
+    // add latitude spread: most near plane
+    b*=(lcg()<0.7?0.2:1.0);
+    var eq=galacticToEquatorial(l,b);
+    ra_d=eq.ra;dec_d=eq.dec;
+  } else {
+    ra_d=lcg()*360;
+    dec_d=Math.asin(lcg()*2-1)*180/Math.PI;
+  }
+  dec_d=Math.max(-89.9,Math.min(89.9,dec_d));
+  var vmag=3.5+lcg()*3.0;
+  var bv=lcg()*1.8-0.2;
+  var v=raDecToVec(ra_d,dec_d,490);
+  starPositions.push(v.x,v.y,v.z);
+  var sz=Math.min(14,Math.max(0.8,7.0-vmag*1.1));
+  starSizes.push(sz);
+  var c=bvToColor(bv);
+  starColors.push(c[0],c[1],c[2]);
+}
+
+var starGeo=new THREE.BufferGeometry();
+starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPositions,3));
+starGeo.setAttribute('aSize',new THREE.Float32BufferAttribute(starSizes,1));
+starGeo.setAttribute('aColor',new THREE.Float32BufferAttribute(starColors,3));
+
+var starMat=new THREE.ShaderMaterial({
+  uniforms:{},
+  transparent:true,
+  depthWrite:false,
+  blending:THREE.AdditiveBlending,
+  vertexShader:`
+    attribute float aSize;
+    attribute vec3 aColor;
+    varying vec3 vColor;
+    varying float vSize;
+    void main(){
+      vColor=aColor;
+      vSize=aSize;
+      vec4 mv=modelViewMatrix*vec4(position,1.0);
+      gl_Position=projectionMatrix*mv;
+      gl_PointSize=aSize*(600.0/-mv.z);
+      gl_PointSize=clamp(gl_PointSize,0.8,14.0);
+    }
+  `,
+  fragmentShader:`
+    varying vec3 vColor;
+    varying float vSize;
+    void main(){
+      vec2 c=gl_PointCoord-0.5;
+      float d=length(c)*2.0;
+      float core=exp(-d*d*6.0);
+      float glow=exp(-d*d*1.5)*0.4;
+      float alpha=(core+glow);
+      if(alpha<0.01)discard;
+      gl_FragColor=vec4(vColor,alpha);
+    }
+  `
+});
+var starPoints=new THREE.Points(starGeo,starMat);
+celestialGroup.add(starPoints);
+
+// ===================== ECLIPTIC RING =====================
+var eclPts=[];
+var eps23=23.4393*Math.PI/180;
+for(var i=0;i<=360;i++){
+  var lam=i*Math.PI/180;
+  var x=490*Math.cos(lam);
+  var y=490*Math.sin(lam)*Math.sin(eps23);
+  var z=490*Math.sin(lam)*Math.cos(eps23);
+  // equatorial: ra=lam, dec from ecliptic
+  var ra_eq=Math.atan2(Math.sin(lam)*Math.cos(eps23),Math.cos(lam));
+  var dec_eq=Math.asin(Math.sin(lam)*Math.sin(eps23));
+  eclPts.push(490*Math.cos(dec_eq)*Math.cos(ra_eq),490*Math.sin(dec_eq),490*Math.cos(dec_eq)*Math.sin(ra_eq));
+}
+var eclGeo=new THREE.BufferGeometry();
+eclGeo.setAttribute('position',new THREE.Float32BufferAttribute(eclPts,3));
+var eclMat=new THREE.LineBasicMaterial({color:0xdcb43c,transparent:true,opacity:0.35,depthWrite:false});
+var eclLine=new THREE.LineLoop(eclGeo,eclMat);
+celestialGroup.add(eclLine);
+
+// ===================== SUN =====================
+var sunGeo=new THREE.SphereGeometry(2.5,16,16);
+var sunMat=new THREE.MeshBasicMaterial({color:0xfffaaa});
+var sunMesh=new THREE.Mesh(sunGeo,sunMat);
+celestialGroup.add(sunMesh);
+
+// Sun glow sprite
+var sunGlowCanvas=document.createElement('canvas');
+sunGlowCanvas.width=64;sunGlowCanvas.height=64;
+var sgc=sunGlowCanvas.getContext('2d');
+var sgr=sgc.createRadialGradient(32,32,0,32,32,32);
+sgr.addColorStop(0,'rgba(255,250,180,0.95)');
+sgr.addColorStop(0.2,'rgba(255,220,80,0.7)');
+sgr.addColorStop(0.5,'rgba(255,180,40,0.3)');
+sgr.addColorStop(1,'rgba(255,120,0,0)');
+sgc.fillStyle=sgr;sgc.fillRect(0,0,64,64);
+var sunGlowTex=new THREE.CanvasTexture(sunGlowCanvas);
+var sunGlowMat=new THREE.SpriteMaterial({map:sunGlowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
+var sunGlowSprite=new THREE.Sprite(sunGlowMat);
+sunGlowSprite.scale.set(30,30,1);
+celestialGroup.add(sunGlowSprite);
+
+// ===================== GANZHI RINGS =====================
+var BRANCH_COLORS=[
+  0x4488ff,0x3366cc,  // 子丑 blue
+  0x44cc44,0x338833,  // 寅卯 green
+  0xddcc44,0xcc9922,  // 辰巳 yellow
+  0xff4444,0xcc3333,  // 午未 red
+  0xdddddd,0xaaaaaa,  // 申酉 white
+  0xff8833,0xcc6622   // 戌亥 orange
+];
+
+function makeBranchColor(idx){return BRANCH_COLORS[idx];}
+
+function makeRing(radius,segments){
+  var pts=[];
+  for(var i=0;i<=segments;i++){
+    var a=i/segments*Math.PI*2;
+    pts.push(Math.cos(a)*radius,0,Math.sin(a)*radius);
+  }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+  return g;
+}
+
+// Ring lines
+var ringRadii=[60,90,120,150];
+var ringGeoms=[];
+var ringMeshes=[];
+for(var ri=0;ri<4;ri++){
+  var rg=makeRing(ringRadii[ri],128);
+  var rm=new THREE.LineBasicMaterial({color:0x335566,transparent:true,opacity:0.5,depthWrite:false});
+  var rl=new THREE.LineLoop(rg,rm);
+  celestialGroup.add(rl);
+  ringGeoms.push(rg);
+  ringMeshes.push(rl);
+}
+
+// Create canvas texture for a single Chinese character
+function makeCharTexture(char,color,bgAlpha){
+  var c=document.createElement('canvas');
+  c.width=64;c.height=64;
+  var ctx=c.getContext('2d');
+  ctx.clearRect(0,0,64,64);
+  if(bgAlpha>0){
+    ctx.beginPath();ctx.arc(32,32,28,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,20,'+bgAlpha+')';ctx.fill();
+  }
+  ctx.font='bold 34px STSong,SimSun,serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle=color;
+  ctx.fillText(char,32,33);
+  return new THREE.CanvasTexture(c);
+}
+
+// Branch char sprites for rings
+var branchSprites=[];  // [ringIdx][branchIdx]
+var ringHighlights=[];  // highlight arc meshes
+
+for(var ri=0;ri<4;ri++){
+  var arr=[];
+  for(var bi=0;bi<12;bi++){
+    var angle=bi/12*Math.PI*2;
+    var r=ringRadii[ri]+8;
+    var x=Math.cos(angle)*r;
+    var z=Math.sin(angle)*r;
+    var tex=makeCharTexture(ZHI[bi],'#'+makeBranchColor(bi).toString(16).padStart(6,'0'),0.5);
+    var sm=new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false});
+    var sp=new THREE.Sprite(sm);
+    sp.position.set(x,0,z);
+    sp.scale.set(8,8,1);
+    celestialGroup.add(sp);
+    arr.push(sp);
+  }
+  branchSprites.push(arr);
+}
+
+// Active branch highlight glow
+function makeGlowRing(radius,startAngle,arcLen,color){
+  var pts=[];
+  var steps=32;
+  for(var i=0;i<=steps;i++){
+    var a=startAngle+i/steps*arcLen;
+    pts.push(Math.cos(a)*radius,0.2,Math.sin(a)*radius);
+  }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+  var m=new THREE.LineBasicMaterial({color:color,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending});
+  return new THREE.Line(g,m);
+}
+
+var activeHighlights=[];
+for(var ri=0;ri<4;ri++){
+  var hl=makeGlowRing(ringRadii[ri]-3,0,Math.PI/6,0xf0d880);
+  hl.visible=false;
+  celestialGroup.add(hl);
+  activeHighlights.push(hl);
+}
+
+// ===================== CAMERA CONTROLS =====================
+var camAz=180*Math.PI/180;  // south
+var camAlt=40*Math.PI/180;
+var camFOV=70;
+var isDragging=false;
+var lastMX=0,lastMY=0;
+
+function updateCamera(){
+  var ca=Math.cos(camAlt),sa=Math.sin(camAlt);
+  var caz=Math.cos(camAz),saz=Math.sin(camAz);
+  // Az=0 is north, Az=90 east, etc. in horizontal coords
+  // X=East, Y=Up, Z=North in our scene
+  var tx=-saz*ca;  // East component
+  var ty=sa;       // Up component
+  var tz=caz*ca;   // North component
+  camera.lookAt(tx,ty,tz);
+  camera.fov=camFOV;
+  camera.updateProjectionMatrix();
+}
+
+renderer.domElement.addEventListener('mousedown',function(e){
+  isDragging=true;lastMX=e.clientX;lastMY=e.clientY;
+});
+renderer.domElement.addEventListener('mousemove',function(e){
+  if(!isDragging)return;
+  var dx=e.clientX-lastMX,dy=e.clientY-lastMY;
+  lastMX=e.clientX;lastMY=e.clientY;
+  camAz-=dx*0.003;
+  camAlt+=dy*0.003;
+  camAlt=Math.max(-85*Math.PI/180,Math.min(85*Math.PI/180,camAlt));
+  updateCamera();
+});
+renderer.domElement.addEventListener('mouseup',function(){isDragging=false;});
+renderer.domElement.addEventListener('mouseleave',function(){isDragging=false;});
+renderer.domElement.addEventListener('wheel',function(e){
+  camFOV+=e.deltaY*0.05;
+  camFOV=Math.max(30,Math.min(100,camFOV));
+  updateCamera();
+},{passive:true});
+
+// Touch
+var lastTouchX=0,lastTouchY=0;
+renderer.domElement.addEventListener('touchstart',function(e){
+  if(e.touches.length===1){isDragging=true;lastTouchX=e.touches[0].clientX;lastTouchY=e.touches[0].clientY;}
+},{passive:true});
+renderer.domElement.addEventListener('touchmove',function(e){
+  if(!isDragging||e.touches.length!==1)return;
+  var dx=e.touches[0].clientX-lastTouchX,dy=e.touches[0].clientY-lastTouchY;
+  lastTouchX=e.touches[0].clientX;lastTouchY=e.touches[0].clientY;
+  camAz-=dx*0.003;
+  camAlt+=dy*0.003;
+  camAlt=Math.max(-85*Math.PI/180,Math.min(85*Math.PI/180,camAlt));
+  updateCamera();
+},{passive:true});
+renderer.domElement.addEventListener('touchend',function(){isDragging=false;});
+
+// ===================== TIME CONTROL =====================
+var speedMultipliers=[1,60,3600,86400,2592000,31536000,315360000];
+var speedLabels=['Real-time','×60 (1 min/s)','×3600 (1 hr/s)','×86400 (1 day/s)','×2592000 (1 mo/s)','×31536000 (1 yr/s)','×315360000 (10 yr/s)'];
+var speedSlider=document.getElementById('speed-slider');
+speedSlider.max=speedMultipliers.length-1;
+var currentSpeedIdx=0;
+speedSlider.addEventListener('input',function(){
+  currentSpeedIdx=parseInt(this.value);
+  document.getElementById('speed-label').textContent=speedLabels[currentSpeedIdx];
+});
+
+var virtualTime=Date.now();
+var lastRealTime=Date.now();
+
+// Location inputs
+var latInput=document.getElementById('lat-input');
+var lonInput=document.getElementById('lon-input');
+var observerLat=39.9*Math.PI/180;
+var observerLon=116.4;
+
+function updateLocation(){
+  observerLat=parseFloat(latInput.value)*Math.PI/180||0;
+  observerLon=parseFloat(lonInput.value)||0;
+}
+latInput.addEventListener('change',updateLocation);
+lonInput.addEventListener('change',updateLocation);
+lonInput.addEventListener('input',updateLocation);
+latInput.addEventListener('input',updateLocation);
+
+// ===================== UI UPDATE =====================
+function padZ(n){return n<10?'0'+n:n}
+function updateUI(date){
+  var y=date.getUTCFullYear(),mo=date.getUTCMonth()+1,d=date.getUTCDate();
+  var h=date.getUTCHours(),mi=date.getUTCMinutes(),s=date.getUTCSeconds();
+  document.getElementById('gz-year').textContent=ganzhiYear(y);
+  document.getElementById('gz-month').textContent=ganzhiMonth(date);
+  document.getElementById('gz-day').textContent=ganzhiDay(date);
+  document.getElementById('gz-hour').textContent=ganzhiHour(date,observerLon);
+  document.getElementById('datetime-display').textContent=
+    y+'-'+padZ(mo)+'-'+padZ(d)+' '+padZ(h)+':'+padZ(mi)+':'+padZ(s)+' UTC';
+}
+
+// ===================== HIGHLIGHT RINGS =====================
+function updateRingHighlights(date){
+  // Hour ring (ri=0): highlight current hour branch
+  var hBranch=ganzhiHourBranch(date,observerLon);
+  // Month ring (ri=2): current month branch
+  var mBranch=((date.getUTCMonth()+2)%12+12)%12;
+  // Day ring (ri=1): current day branch
+  var dayGZ=ganzhiDay(date);
+  var dBranch=ZHI.indexOf(dayGZ[1]);
+  // Year ring (ri=3): current year branch
+  var yearGZ=ganzhiYear(date.getUTCFullYear());
+  var yBranch=ZHI.indexOf(yearGZ[1]);
+
+  var branches=[hBranch,dBranch,mBranch,yBranch];
+  for(var ri=0;ri<4;ri++){
+    var bi=branches[ri];
+    var angle=bi/12*Math.PI*2;
+    // Rebuild highlight
+    celestialGroup.remove(activeHighlights[ri]);
+    var col=makeBranchColor(bi);
+    activeHighlights[ri]=makeGlowRing(ringRadii[ri]-3,angle-Math.PI/24,Math.PI/12,col);
+    activeHighlights[ri].visible=true;
+    celestialGroup.add(activeHighlights[ri]);
+    // Scale active sprite
+    for(var j=0;j<12;j++){
+      branchSprites[ri][j].scale.set(j===bi?11:8,j===bi?11:8,1);
+      branchSprites[ri][j].material.opacity=j===bi?1.0:0.65;
+    }
+  }
+}
+
+// ===================== CELESTIAL EQUATOR RING =====================
+var ceqPts=[];
+for(var i=0;i<=360;i++){
+  var a=i*Math.PI/180;
+  // Equatorial plane: ra=a, dec=0
+  ceqPts.push(490*Math.cos(a),0,490*Math.sin(a));
+}
+var ceqGeo=new THREE.BufferGeometry();
+ceqGeo.setAttribute('position',new THREE.Float32BufferAttribute(ceqPts,3));
+var ceqMat=new THREE.LineBasicMaterial({color:0x224466,transparent:true,opacity:0.3,depthWrite:false});
+var ceqLine=new THREE.LineLoop(ceqGeo,ceqMat);
+celestialGroup.add(ceqLine);
+
+// ===================== ANIMATION LOOP =====================
+updateCamera();
+
+var prevTime=performance.now();
+function animate(){
+  requestAnimationFrame(animate);
+  var now=performance.now();
+  var delta=(now-prevTime)/1000;  // seconds real
+  prevTime=now;
+  // advance virtual time
+  virtualTime+=delta*1000*speedMultipliers[currentSpeedIdx];
+  var vDate=new Date(virtualTime);
+
+  // Compute LST
+  var lst=lstDeg(vDate,observerLon)*Math.PI/180;
+  // Update celestialGroup transform
+  celestialGroup.matrix=eqToHorMatrix(lst,observerLat);
+  celestialGroup.matrixWorldNeedsUpdate=true;
+
+  // Update Sun
+  var sunEq=sunEquatorial(vDate);
+  var sr=490;
+  var sx=Math.cos(sunEq.dec)*Math.cos(sunEq.ra)*sr;
+  var sy=Math.sin(sunEq.dec)*sr;
+  var sz=Math.cos(sunEq.dec)*Math.sin(sunEq.ra)*sr;
+  sunMesh.position.set(sx,sy,sz);
+  sunGlowSprite.position.set(sx,sy,sz);
+
+  // Update ring highlights every 2s to avoid overhead
+  updateRingHighlights(vDate);
+
+  // Update UI
+  updateUI(vDate);
+
+  renderer.render(scene,camera);
+}
+animate();
+
+// ===================== RESIZE =====================
+window.addEventListener('resize',function(){
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+</script>
+</body>
+</html>

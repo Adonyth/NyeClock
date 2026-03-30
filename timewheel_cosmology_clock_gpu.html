@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Timewheel GPU · 分层渲染架构</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --hub-fg: #e8eef8;
+      --hub-muted: rgba(200, 215, 240, 0.6);
+      --hub-accent: #6eb8ff;
+    }
+    html, body { height: 100%; margin: 0; overflow: hidden; background: #050810; font-family: system-ui, sans-serif; }
+    .tw-stage-wrap {
+      position: fixed; inset: 0; display: grid; place-items: center;
+      padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom);
+    }
+    .tw-stage {
+      position: relative;
+      width: min(96vmin, 720px);
+      aspect-ratio: 1;
+      max-height: 92vh;
+    }
+    .tw-layer-static,
+    .tw-layer-dynamic {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      /* 分层合成：浏览器可将各层作为独立 GPU 纹理 */
+    }
+    .tw-layer-dynamic { pointer-events: none; }
+    .tw-hub {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 36%;
+      text-align: center;
+      pointer-events: none;
+      color: var(--hub-fg);
+    }
+    .tw-digital { font-family: "JetBrains Mono", monospace; font-size: clamp(0.9rem, 3.8vmin, 1.6rem); letter-spacing: 0.04em; }
+    .tw-gz { font-family: "Noto Serif SC", serif; font-size: clamp(0.85rem, 3vmin, 1.25rem); color: var(--hub-accent); margin-top: 0.35em; font-weight: 600; }
+    .tw-meta { font-size: clamp(0.6rem, 1.6vmin, 0.75rem); color: var(--hub-muted); margin-top: 0.45em; line-height: 1.35; }
+    .tw-toolbar {
+      position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+      z-index: 10;
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center;
+      padding: 6px 12px; border-radius: 999px;
+      background: rgba(8, 14, 28, 0.85); border: 1px solid rgba(120, 170, 255, 0.2);
+      font-size: 11px; color: #aab;
+    }
+    .tw-toolbar select, .tw-toolbar button {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: #dde; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer;
+    }
+    .tw-hud {
+      position: fixed; bottom: 8px; left: 8px; font: 11px/1.4 ui-monospace, monospace;
+      color: rgba(180, 200, 230, 0.55); max-width: 280px; z-index: 5;
+    }
+    .tier-0 { --hub-accent: #6eb8ff; }
+    .tier-1 { --hub-accent: #7ec0ff; }
+    .tier-2 { --hub-accent: #8ec8ff; }
+  </style>
+</head>
+<body class="tier-0">
+  <!--
+    =============================================================================
+    ARCHITECTURE (Timewheel GPU — production-oriented)
+    -----------------------------------------------------------------------------
+    [ CSS background / optional static FX ]  ← 零 Canvas 成本
+    [ canvas#static ]  ← 地支 + 十天干（固定 36° 扇区一次画全）仅 dirty 时重绘
+    [ canvas#dynamic ] ← 每帧：clear → 地支/时干高亮弧 + 指针（无整环旋转）
+    [ div.hub ]        ← DOM 文字时钟（避免 Canvas 文本每帧 measure/fill）
+    -----------------------------------------------------------------------------
+    原则：全量矢量重绘从不进入 rAF；动画仅矩阵变换 + 少量 path。
+    =============================================================================
+  -->
+  <div class="tw-toolbar">
+    <span>性能档</span>
+    <select id="tierManual" title="自动档根据 FPS 降级">
+      <option value="auto">自动</option>
+      <option value="2">高</option>
+      <option value="1">中</option>
+      <option value="0">低</option>
+    </select>
+    <button type="button" id="btnSec" aria-pressed="true">副环</button>
+    <span id="fpsLabel" style="opacity:.75">FPS —</span>
+  </div>
+
+  <div class="tw-stage-wrap">
+    <div class="tw-stage" id="twStage">
+      <canvas class="tw-layer-static" id="cvStatic" aria-hidden="true"></canvas>
+      <canvas class="tw-layer-dynamic" id="cvDynamic" aria-hidden="true"></canvas>
+      <div class="tw-hub">
+        <div class="tw-digital" id="twDigital">00:00:00</div>
+        <div class="tw-gz" id="twGanzhi">——</div>
+        <div class="tw-meta" id="twMeta"></div>
+      </div>
+    </div>
+  </div>
+  <div class="tw-hud" id="twHud"></div>
+
+  <script>
+(function () {
+  'use strict';
+
+  /** ========== 数据（与原版一致，略） ========== */
+  const STEMS = [
+    { han: '甲', element: '木', color: '#2d8a54' },
+    { han: '乙', element: '木', color: '#5cb87a' },
+    { han: '丙', element: '火', color: '#e85d3a' },
+    { han: '丁', element: '火', color: '#ff8c69' },
+    { han: '戊', element: '土', color: '#a67c52' },
+    { han: '己', element: '土', color: '#c4a574' },
+    { han: '庚', element: '金', color: '#9aa3ad' },
+    { han: '辛', element: '金', color: '#c8cdd4' },
+    { han: '壬', element: '水', color: '#3d7ea6' },
+    { han: '癸', element: '水', color: '#6ba3c7' }
+  ];
+  const BRANCHES = [
+    { han: '子', animal: '鼠' }, { han: '丑', animal: '牛' }, { han: '寅', animal: '虎' },
+    { han: '卯', animal: '兔' }, { han: '辰', animal: '龙' }, { han: '巳', animal: '蛇' },
+    { han: '午', animal: '马' }, { han: '未', animal: '羊' }, { han: '申', animal: '猴' },
+    { han: '酉', animal: '鸡' }, { han: '戌', animal: '狗' }, { han: '亥', animal: '猪' }
+  ];
+  const REF_JIAZI = Date.UTC(1984, 1, 2);
+
+  function getDayGanzhi(d) {
+    const utcMid = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+    const days = Math.round((utcMid - REF_JIAZI) / 86400000);
+    const idx = ((days % 60) + 60) % 60;
+    return { stem: idx % 10, branch: idx % 12, idx };
+  }
+  function getBranchIndexFromTime(h, m) {
+    const t = h + m / 60;
+    if (t >= 23 || t < 1) return 0;
+    if (t < 3) return 1;
+    if (t < 5) return 2;
+    if (t < 7) return 3;
+    if (t < 9) return 4;
+    if (t < 11) return 5;
+    if (t < 13) return 6;
+    if (t < 15) return 7;
+    if (t < 17) return 8;
+    if (t < 19) return 9;
+    if (t < 21) return 10;
+    return 11;
+  }
+  function getHourStem(dayStem, branchIndex) {
+    const group = dayStem % 5;
+    const base = [0, 2, 4, 6, 8][group];
+    return (base + branchIndex) % 10;
+  }
+  function timeToAngle(h, m, s) {
+    return ((h + m / 60 + s / 3600) / 24) * 360;
+  }
+  function polarToXY(r, deg) {
+    const rad = ((deg - 90) * Math.PI) / 180;
+    return { x: r * Math.cos(rad), y: r * Math.sin(rad) };
+  }
+
+  /** ========== 几何常量（逻辑坐标 0..logicalSize） ========== */
+  const LOGICAL = 512;
+  const R_OUT0 = 0.45 * LOGICAL;
+  const R_OUT1 = 0.35 * LOGICAL;
+  const R_IN0 = 0.33 * LOGICAL;
+  const R_IN1 = 0.235 * LOGICAL;
+  const R_SEC0 = 0.48 * LOGICAL;
+  const R_SEC1 = 0.46 * LOGICAL;
+  const CX = LOGICAL / 2;
+  const CY = LOGICAL / 2;
+
+  /** 环形扇区：外弧 → 径向 → 内弧逆回 — 单次 beginPath，供 stroke/fill */
+  function wedgePath(ctx, r0, r1, a0, a1) {
+    const p0s = polarToXY(r0, a0);
+    const p0e = polarToXY(r0, a1);
+    const p1e = polarToXY(r1, a1);
+    const p1s = polarToXY(r1, a0);
+    const ra0 = ((a0 - 90) * Math.PI) / 180;
+    const ra1 = ((a1 - 90) * Math.PI) / 180;
+    ctx.beginPath();
+    ctx.moveTo(CX + p0s.x, CY + p0s.y);
+    ctx.arc(CX, CY, r0, ra0, ra1, false);
+    ctx.lineTo(CX + p1e.x, CY + p1e.y);
+    ctx.arc(CX, CY, r1, ra1, ra0, true);
+    ctx.closePath();
+  }
+
+  /** ========== 主题色（避免运行时 CSS 读变量 — 减少同步） ========== */
+  const PALETTES = [
+    { // tier low
+      stemHiFill: 'rgba(100, 190, 255, 0.12)',
+      bg: '#0a0e16', branchStroke: 'rgba(140,170,210,0.2)', stemStroke: 'rgba(200,180,140,0.42)',
+      accent: 'rgba(120, 200, 255, 0.85)', ring: 'rgba(100, 150, 220, 0.25)', muted: 'rgba(200,215,240,0.45)',
+      sec: 'rgba(100,150,200,0.2)', active: 'rgba(100, 200, 255, 0.22)', cross: 'rgba(255,255,255,0.06)'
+    },
+    { // tier medium
+      stemHiFill: 'rgba(110, 200, 255, 0.14)',
+      bg: '#080c14', branchStroke: 'rgba(130,170,220,0.28)', stemStroke: 'rgba(210,190,140,0.48)',
+      accent: 'rgba(126, 192, 255, 0.92)', ring: 'rgba(100, 160, 255, 0.32)', muted: 'rgba(200,215,240,0.5)',
+      sec: 'rgba(100,160,220,0.32)', active: 'rgba(110, 210, 255, 0.28)', cross: 'rgba(255,255,255,0.08)'
+    },
+    { // tier high — 仍无 filter/blur；仅略高对比
+      stemHiFill: 'rgba(120, 220, 255, 0.16)',
+      bg: '#060a12', branchStroke: 'rgba(120,180,240,0.35)', stemStroke: 'rgba(230,210,150,0.52)',
+      accent: 'rgba(140, 220, 255, 0.95)', ring: 'rgba(90, 150, 255, 0.4)', muted: 'rgba(210,220,240,0.55)',
+      sec: 'rgba(100,170,240,0.4)', active: 'rgba(120, 230, 255, 0.32)', cross: 'rgba(255,255,255,0.1)'
+    }
+  ];
+
+  /** ========== Canvas 与离屏 ========== */
+  const cvStatic = document.getElementById('cvStatic');
+  const cvDynamic = document.getElementById('cvDynamic');
+  const ctxS = cvStatic.getContext('2d', { alpha: false, desynchronized: true });
+  const ctxD = cvDynamic.getContext('2d', { alpha: true, desynchronized: true });
+
+  let dpr = 1;
+  let bmpW = 0;
+  let bmpH = 0;
+  /** 静态层脏标记：主题 / tier / 尺寸 / 副环 */
+  let staticDirty = true;
+  let showSecondary = true;
+
+  /** 性能档 0=低 1=中 2=高；可由 FPS 自动下调 */
+  let perfTier = 2;
+  let tierManual = 'auto';
+
+  /** 自适应帧 */
+  let targetFps = 60;
+  let lastTick = 0;
+  /** FPS 采样 */
+  const FPS_SAMPLES = 45;
+  const fpsBuf = new Float32Array(FPS_SAMPLES);
+  let fpsIdx = 0;
+  let fpsFill = 0;
+
+  function resize() {
+    const stage = document.getElementById('twStage');
+    const rect = stage.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    bmpW = Math.round(rect.width * dpr);
+    bmpH = Math.round(rect.height * dpr);
+    cvStatic.width = bmpW;
+    cvStatic.height = bmpH;
+    cvDynamic.width = bmpW;
+    cvDynamic.height = bmpH;
+    ctxS.setTransform(1, 0, 0, 1, 0, 0);
+    ctxD.setTransform(1, 0, 0, 1, 0, 0);
+    scaleCtxToLogical(ctxS);
+    scaleCtxToLogical(ctxD);
+    staticDirty = true;
+  }
+
+  function scaleCtxToLogical(ctx) {
+    const sx = bmpW / LOGICAL;
+    const sy = bmpH / LOGICAL;
+    ctx.setTransform(sx, 0, 0, sy, 0, 0);
+  }
+
+  function drawRingContent(ctx, palette, tier, drawSecondary) {
+    ctx.clearRect(0, 0, LOGICAL, LOGICAL);
+    ctx.fillStyle = palette.bg;
+    ctx.fillRect(0, 0, LOGICAL, LOGICAL);
+
+    /** 外环地支 */
+    for (let i = 0; i < 12; i++) {
+      const mid = i * 30;
+      wedgePath(ctx, R_OUT1, R_OUT0, mid - 15, mid + 15);
+      ctx.fillStyle = 'transparent';
+      ctx.strokeStyle = palette.branchStroke;
+      ctx.lineWidth = tier >= 1 ? 0.5 : 0.75;
+      ctx.stroke();
+
+      const b = BRANCHES[i];
+      const pos = polarToXY((R_OUT0 + R_OUT1) / 2, mid);
+      ctx.save();
+      ctx.translate(CX + pos.x, CY + pos.y);
+      ctx.fillStyle = palette.accent;
+      ctx.font = (tier >= 2 ? 'bold ' : '') + '15px "Noto Serif SC", serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(b.han, 0, -3);
+      ctx.fillStyle = palette.muted;
+      ctx.font = '9px system-ui,sans-serif';
+      ctx.fillText(b.animal, 0, 8);
+      ctx.restore();
+    }
+
+    /** 副环 */
+    if (drawSecondary && tier >= 1) {
+      ctx.strokeStyle = palette.sec;
+      ctx.lineWidth = 0.35;
+      for (let i = 0; i < 12; i++) {
+        const mid = i * 30;
+        const a0 = polarToXY(R_SEC1, mid - 15);
+        const a1 = polarToXY(R_SEC1, mid + 15);
+        ctx.beginPath();
+        ctx.moveTo(CX + a0.x, CY + a0.y);
+        ctx.lineTo(CX + a1.x, CY + a1.y);
+        ctx.stroke();
+      }
+    }
+
+    /** 径向线 */
+    if (tier >= 1) {
+      ctx.strokeStyle = palette.cross;
+      ctx.lineWidth = 0.4;
+      for (let a = 0; a < 360; a += 30) {
+        const p = polarToXY(96 * LOGICAL / 200, a);
+        ctx.beginPath();
+        ctx.moveTo(CX, CY);
+        ctx.lineTo(CX + p.x, CY + p.y);
+        ctx.stroke();
+      }
+    }
+
+    /** 装饰圆 — 整数化半径减少亚像素抖动（逻辑坐标下取整） */
+    ctx.strokeStyle = palette.ring;
+    ctx.lineWidth = 0.35;
+    ctx.beginPath();
+    ctx.arc(CX, CY, Math.round(R_OUT0) + 0.5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(CX, CY, Math.round(R_IN0) + 0.5, 0, Math.PI * 2);
+    ctx.stroke();
+
+    /** 内环十天干：初始化一次画满 10 扇区，不随帧旋转整环 */
+    const step = 36;
+    for (let i = 0; i < 10; i++) {
+      const mid = i * step;
+      wedgePath(ctx, R_IN1, R_IN0, mid - step / 2, mid + step / 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.fill();
+      ctx.strokeStyle = palette.stemStroke;
+      ctx.lineWidth = tier >= 1 ? 0.42 : 0.55;
+      ctx.stroke();
+
+      const s = STEMS[i];
+      const pos = polarToXY((R_IN0 + R_IN1) / 2, mid);
+      ctx.save();
+      ctx.translate(Math.round(CX + pos.x) + 0.5, Math.round(CY + pos.y) + 0.5);
+      ctx.fillStyle = s.color;
+      ctx.font = (tier >= 2 ? 'bold ' : '') + '14px "Noto Serif SC", serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(s.han, 0, -3);
+      ctx.fillStyle = palette.muted;
+      ctx.font = '8px system-ui,sans-serif';
+      ctx.fillText(s.element, 0, 8);
+      ctx.restore();
+    }
+  }
+
+  function renderStaticLayer() {
+    if (!staticDirty) return;
+    const palette = PALETTES[perfTier];
+    drawRingContent(ctxS, palette, perfTier, showSecondary);
+    staticDirty = false;
+  }
+
+  /**
+   * 动态层：当前地支扇区 + 当前时干扇区 + 指针（无整盘旋转、无离屏 blit）
+   */
+  function renderDynamicLayer(liveAngleDeg, liveBi, liveHi, tier) {
+    const palette = PALETTES[tier];
+    ctxD.clearRect(0, 0, LOGICAL, LOGICAL);
+
+    /** 当前地支扇区高亮 */
+    const midB = liveBi * 30;
+    wedgePath(ctxD, R_OUT1, R_OUT0, midB - 15, midB + 15);
+    ctxD.strokeStyle = palette.active;
+    ctxD.lineWidth = tier >= 1 ? 1.1 : 1.4;
+    ctxD.stroke();
+
+    /** 当前时干扇区高亮（固定圆周上的第 liveHi 格） */
+    const midS = liveHi * 36;
+    wedgePath(ctxD, R_IN1, R_IN0, midS - 18, midS + 18);
+    ctxD.fillStyle = palette.stemHiFill || 'rgba(120, 200, 255, 0.14)';
+    ctxD.fill();
+    ctxD.strokeStyle = palette.accent;
+    ctxD.lineWidth = tier >= 1 ? 1.05 : 1.25;
+    ctxD.stroke();
+
+    /** 指针 — 线段 + 圆心点，避免 shadow */
+    const rPtr = (liveAngleDeg * Math.PI) / 180;
+    ctxD.save();
+    ctxD.translate(CX, CY);
+    ctxD.rotate(rPtr);
+    ctxD.strokeStyle = palette.accent;
+    ctxD.lineWidth = tier >= 2 ? 1.25 : 1.5;
+    ctxD.lineCap = 'round';
+    ctxD.beginPath();
+    ctxD.moveTo(0, 0);
+    ctxD.lineTo(0, -R_OUT0 * 0.92);
+    ctxD.stroke();
+    ctxD.fillStyle = palette.accent;
+    ctxD.beginPath();
+    ctxD.arc(0, 0, tier >= 2 ? 3 : 3.5, 0, Math.PI * 2);
+    ctxD.fill();
+    ctxD.restore();
+  }
+
+  function sampleFps(dt) {
+    const inst = dt > 0 ? 1000 / dt : 60;
+    fpsBuf[fpsIdx % FPS_SAMPLES] = inst;
+    fpsIdx++;
+    if (fpsFill < FPS_SAMPLES) fpsFill++;
+    let sum = 0;
+    for (let i = 0; i < fpsFill; i++) sum += fpsBuf[i];
+    return sum / fpsFill;
+  }
+
+  function autoTierFromFps(avgFps) {
+    if (tierManual !== 'auto') return;
+    if (avgFps < 24 && perfTier > 0) {
+      perfTier--;
+      staticDirty = true;
+      document.body.className = 'tier-' + perfTier;
+    } else if (avgFps > 52 && perfTier < 2) {
+      perfTier++;
+      staticDirty = true;
+      document.body.className = 'tier-' + perfTier;
+    }
+  }
+
+  function tick(now) {
+    const elapsed = now - lastTick;
+    const minInterval = 1000 / targetFps;
+    if (elapsed < minInterval - 0.5) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    lastTick = now;
+
+    const date = new Date();
+    const h = date.getHours();
+    const m = date.getMinutes();
+    const s = date.getSeconds();
+    const ms = date.getMilliseconds();
+
+    const dg = getDayGanzhi(date);
+    const liveBi = getBranchIndexFromTime(h, m);
+    const liveHi = getHourStem(dg.stem, liveBi);
+    const liveAngle = timeToAngle(h, m, s + ms / 1000);
+
+    renderStaticLayer();
+    renderDynamicLayer(liveAngle, liveBi, liveHi, perfTier);
+
+    const sh = STEMS[liveHi];
+    const br = BRANCHES[liveBi];
+    document.getElementById('twDigital').textContent =
+      String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    document.getElementById('twGanzhi').textContent = sh.han + br.han + '时';
+    document.getElementById('twMeta').textContent =
+      'tier ' + perfTier + ' · 十天干静态环 + 动态高亮/指针 · 静态 ' + (staticDirty ? 'dirty' : 'cached');
+
+    const avg = sampleFps(elapsed);
+    document.getElementById('fpsLabel').textContent = 'FPS ' + avg.toFixed(0) + ' · tier ' + perfTier;
+    autoTierFromFps(avg);
+
+    document.getElementById('twHud').textContent =
+      '架构：静态层一次绘制 12 地支 + 10 天干；动态层仅地支弧+时干弧+指针。无整环旋转。';
+
+    requestAnimationFrame(tick);
+  }
+
+  /** ========== 事件 ========== */
+  window.addEventListener('resize', function () {
+    resize();
+    staticDirty = true;
+  });
+
+  document.getElementById('tierManual').addEventListener('change', function (e) {
+    tierManual = e.target.value;
+    if (tierManual === 'auto') return;
+    perfTier = +tierManual;
+    staticDirty = true;
+    document.body.className = 'tier-' + perfTier;
+  });
+
+  document.getElementById('btnSec').addEventListener('click', function () {
+    showSecondary = !showSecondary;
+    staticDirty = true;
+    this.setAttribute('aria-pressed', showSecondary ? 'true' : 'false');
+  });
+
+  document.fonts.ready.then(function () {
+    resize();
+    staticDirty = true;
+    targetFps = /Mobi|Android/i.test(navigator.userAgent) ? 30 : 60;
+    requestAnimationFrame(tick);
+  });
+})();
+  </script>
+</body>
+</html>

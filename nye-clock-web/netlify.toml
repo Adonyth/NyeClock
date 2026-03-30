@@ -1,0 +1,8 @@
+# 拖整个 nye-clock-web 文件夹到 https://app.netlify.com/drop 即可发布
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
