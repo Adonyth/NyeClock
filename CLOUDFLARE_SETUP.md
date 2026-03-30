@@ -17,11 +17,12 @@ This guide deploys Nye Clock without VPS using:
 
 1. Cloudflare Dashboard -> Pages -> Create project -> Connect to Git.
 2. Select repo: `Adonyth/NyeClock`
-3. Set **Root directory** to `Adonyth`
+3. **Root directory:** leave **empty** (repository root).  
+   This repo has `website/`, `tw_.html`, etc. at the **top level** — there is **no** `Adonyth/` subfolder in Git. If you set Root directory to `Adonyth`, the build points at a path that does not exist, and **deployed files (including `/website/`) will not update** even when `main` on GitHub changes.
 4. Build settings:
    - **Build command:** `npm run build`  
      (copies `tw_.html` → `index.html` for parity; **`_redirects` maps `/` to `tw_.html`**, so the live site root always serves the same file as `tw_.html` even if a deploy skipped the copy step.)
-   - **Build output directory:** `.`（项目根，即 `Adonyth` 目录本身；若界面留空且等价于根目录亦可）
+   - **Build output directory:** `.`（仓库根目录）
 5. Deploy.
 
 ## 3) Pages environment variables

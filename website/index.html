@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta name="description" content="Nye Clock — official landing: web app on Cloudflare Pages and macOS download." />
   <title>Nye Clock — Official</title>
   <link rel="canonical" href="https://nyeclock.pages.dev/website/" />
+  <!-- Landing revision: bump when you deploy so you can confirm live ≠ cached copy. -->
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body {
@@ -119,7 +121,10 @@
       </ol>
     </section>
 
-    <footer>Nye Clock</footer>
+    <footer>
+      <p>Nye Clock</p>
+      <p class="note" style="margin-top:0.75rem">Landing revision <strong>2026-03-31-b</strong> · Web app entry is always <code>https://nyeclock.pages.dev/tw_.html</code> (same full UI as the Cloudflare deployment).</p>
+    </footer>
   </main>
 </body>
 </html>
