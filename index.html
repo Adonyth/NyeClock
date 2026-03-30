@@ -11,7 +11,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
+<<<<<<< HEAD
   <!-- 云端：生产环境由 Cloudflare Pages Function /api/cloud-config 注入 Supabase（面板环境变量 SUPABASE_URL、SUPABASE_ANON_KEY）。本地 file:// 或自托管时可取消注释并手动填入： -->
+=======
+  <!-- 云端账户：在 Supabase 创建项目并执行 Adonyth/supabase/nye_user_data.sql 后，取消下面两行注释并填入 URL 与 anon public key -->
+>>>>>>> origin/main
   <!-- <script>window.NYE_SUPABASE_URL="https://YOUR_PROJECT.supabase.co";window.NYE_SUPABASE_ANON_KEY="YOUR_ANON_KEY";</script> -->
   <title id="docTitle">Nye Clock</title>
   <!-- Three.js: main-page flagship Sun–Earth–Moon WebGL instrument (sync load before inline scripts) -->
@@ -1767,6 +1771,7 @@ body::after {
       margin-bottom: 12px;
       word-break: break-all;
     }
+<<<<<<< HEAD
     .nye-oauth-row {
       display: flex;
       flex-wrap: wrap;
@@ -1832,6 +1837,17 @@ body::after {
       text-decoration: underline;
       cursor: pointer;
       font-family: inherit;
+=======
+    .nye-cloud-config-missing {
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255, 200, 120, 0.08);
+      border: 1px dashed color-mix(in srgb, var(--card-border) 55%, transparent);
+      font-size: 11px;
+      line-height: 1.55;
+      color: var(--secondary-color);
+      margin-bottom: 12px;
+>>>>>>> origin/main
     }
     .hero-panel {
       position: relative;
@@ -8227,6 +8243,7 @@ body::after {
       </div>
       <div id="accountPaneCloud" class="account-pane" role="tabpanel" data-account-pane="cloud">
         <div class="nye-cloud-panel" id="nyeCloudPanel">
+<<<<<<< HEAD
           <p class="nye-cloud-lead" id="nyeCloudLead" data-i18n="account.cloudLead"></p>
           <div id="nyeCloudStatus" class="nye-cloud-status" aria-live="polite"></div>
           <div id="nyeCloudSetup" class="nye-cloud-form" style="display: none">
@@ -8270,6 +8287,12 @@ body::after {
               <button type="button" class="nye-oauth-btn" id="nyeOAuthFacebook" data-i18n="account.cloudOAuthFacebook"></button>
             </div>
             <div class="nye-cloud-divider" data-i18n="account.cloudDividerEmail"></div>
+=======
+          <p class="nye-cloud-lead" data-i18n="account.cloudLead"></p>
+          <div id="nyeCloudConfigMissing" class="nye-cloud-config-missing" hidden data-i18n="account.cloudConfigMissing"></div>
+          <div id="nyeCloudStatus" class="nye-cloud-status" aria-live="polite"></div>
+          <div id="nyeCloudAuth" class="nye-cloud-form">
+>>>>>>> origin/main
             <div class="natal-input-row">
               <label for="nyeCloudEmail" data-i18n="account.cloudEmail"></label>
               <input type="email" id="nyeCloudEmail" autocomplete="email" />
@@ -8282,6 +8305,7 @@ body::after {
               <button type="button" class="natal-compute-btn" id="nyeCloudRegisterBtn" data-i18n="account.cloudRegister"></button>
               <button type="button" class="natal-compute-btn natal-compute-btn--secondary" id="nyeCloudLoginBtn" data-i18n="account.cloudLogin"></button>
             </div>
+<<<<<<< HEAD
             <button type="button" class="nye-cloud-magic-btn" id="nyeCloudMagicBtn" data-i18n="account.cloudMagicLink"></button>
             <div class="nye-cloud-divider" data-i18n="account.cloudDividerPhone"></div>
             <div class="natal-input-row">
@@ -8298,6 +8322,8 @@ body::after {
             <div class="nye-cloud-actions">
               <button type="button" class="natal-compute-btn" id="nyeCloudPhoneVerifyBtn" data-i18n="account.cloudPhoneVerify"></button>
             </div>
+=======
+>>>>>>> origin/main
           </div>
           <div id="nyeCloudSigned" class="nye-cloud-signed">
             <div class="nye-cloud-email" id="nyeCloudSignedEmail"></div>
@@ -8479,11 +8505,16 @@ body::after {
       account: {
         hubTitle: 'My account',
         hubLead:
+<<<<<<< HEAD
           'Charts stay on this device. When account sync is available in your build, open Cloud to sign in and keep profiles and settings in sync.',
+=======
+          'Natal charts and cycle analysis stay on this device by default. With Supabase configured, you can register, sign in, and sync BaZi profiles and app settings to the cloud.',
+>>>>>>> origin/main
         tabChart: 'Chart',
         tabFortune: 'Fortune',
         tabCloud: 'Cloud',
         cloudLead:
+<<<<<<< HEAD
           'Pick email, phone, or a social button. Your browser may ask you to allow sign-in once—that is normal. After you are in, use upload or download to sync.',
         cloudOAuthGoogle: 'Google',
         cloudOAuthApple: 'Apple',
@@ -8500,6 +8531,11 @@ body::after {
         cloudSmsSent: 'If SMS is enabled in your project, you should receive a code shortly.',
         cloudOAuthNeedHttps:
           'Google, Apple, and Facebook work when you open the app from its normal website (https). You can still use email or phone sign-in from this screen.',
+=======
+          'Register or sign in to store your saved charts, readings, language, theme, and calendar preference in your account (Supabase).',
+        cloudConfigMissing:
+          'Cloud sign-in is not configured yet. In Supabase create a project, run the SQL in Adonyth/supabase/nye_user_data.sql, then set window.NYE_SUPABASE_URL and window.NYE_SUPABASE_ANON_KEY in the page head (see HTML comment).',
+>>>>>>> origin/main
         cloudEmail: 'Email',
         cloudPassword: 'Password (min. 6 characters)',
         cloudRegister: 'Create account',
@@ -8513,6 +8549,7 @@ body::after {
         cloudDone: 'Done.',
         cloudPullConfirm:
           'Replace local charts, readings, and settings with the cloud copy? This overwrites current data in this browser.',
+<<<<<<< HEAD
         cloudError: 'Sign-in or sync failed. Check your connection and try again, or use another sign-in method.',
         cloudLibLoad: 'Could not load sign-in. Check your network and try again.',
         cloudNeedPassword: 'Enter email and password (6+ characters).',
@@ -8546,6 +8583,12 @@ body::after {
         cloudSetupCheckOk: 'Connection looks good. If sign-in still fails, enable Email/Phone providers in Supabase Authentication -> Providers.',
         cloudEmailTypoHint: 'That email looks invalid. Check the domain spelling (for example gmail.com).',
         cloudPhoneProviderHint: 'Phone login is not enabled in this Supabase project. Enable Phone under Authentication -> Providers and configure an SMS provider.'
+=======
+        cloudError: 'Something went wrong. Check the console or Supabase Auth / RLS settings.',
+        cloudLibLoad: 'Could not load cloud sync library. Check your network.',
+        cloudNeedPassword: 'Enter email and password (6+ characters).',
+        cloudRegisterCheckEmail: 'Check your email to confirm the account if required by your Supabase project.'
+>>>>>>> origin/main
       },
       lang: {
         groupAria: 'Language'
@@ -8882,11 +8925,16 @@ body::after {
       account: {
         hubTitle: '我的账户',
         hubLead:
+<<<<<<< HEAD
           '命盘默认保存在本机。若本版本提供账户同步，可在「云端」登录并同步档案与设置。',
+=======
+          '命盘与运势叠盘默认保存在本机。配置 Supabase 后可注册、登录，并将命盘档案与界面设置同步到云端。',
+>>>>>>> origin/main
         tabChart: '命盘',
         tabFortune: '运势',
         tabCloud: '云端',
         cloudLead:
+<<<<<<< HEAD
           '任选邮箱、手机或社交登录。浏览器可能会弹出一次授权提示，属正常现象。登录后可上传或下载以同步数据。',
         cloudOAuthGoogle: 'Google',
         cloudOAuthApple: 'Apple',
@@ -8903,6 +8951,11 @@ body::after {
         cloudSmsSent: '若项目已开启短信，您将很快收到验证码。',
         cloudOAuthNeedHttps:
           'Google、Apple、Facebook 需在正常的网页地址（https）下打开本应用。您仍可在此使用邮箱或手机号登录。',
+=======
+          '注册或登录后，可将已存命盘、解读记录、语言、主题与历法偏好保存到账户（Supabase）。',
+        cloudConfigMissing:
+          '尚未配置云端登录：在 Supabase 新建项目，执行 Adonyth/supabase/nye_user_data.sql，并在页面 head 中设置 window.NYE_SUPABASE_URL 与 window.NYE_SUPABASE_ANON_KEY（见 HTML 注释）。',
+>>>>>>> origin/main
         cloudEmail: '邮箱',
         cloudPassword: '密码（至少 6 位）',
         cloudRegister: '注册账户',
@@ -8915,6 +8968,7 @@ body::after {
         cloudBusy: '处理中…',
         cloudDone: '已完成。',
         cloudPullConfirm: '用云端数据覆盖本机的命盘、记录与设置？确认后将改写当前浏览器中的数据。',
+<<<<<<< HEAD
         cloudError: '登录或同步失败。请检查网络后重试，或换一种登录方式。',
         cloudLibLoad: '无法加载登录组件。请检查网络后重试。',
         cloudNeedPassword: '请输入邮箱和密码（至少 6 位）。',
@@ -8948,6 +9002,12 @@ body::after {
         cloudSetupCheckOk: '连接看起来正常。若仍无法登录，请在 Supabase 的 Authentication -> Providers 启用 Email/Phone。',
         cloudEmailTypoHint: '邮箱格式看起来无效，请检查域名拼写（例如 gmail.com）。',
         cloudPhoneProviderHint: '当前 Supabase 项目未启用手机登录。请到 Authentication -> Providers 开启 Phone，并配置短信服务商。'
+=======
+        cloudError: '操作失败，请查看控制台或 Supabase 认证 / 行级策略设置。',
+        cloudLibLoad: '无法加载云端同步脚本，请检查网络。',
+        cloudNeedPassword: '请输入邮箱和密码（至少 6 位）。',
+        cloudRegisterCheckEmail: '若项目在 Supabase 中启用了邮箱验证，请查收邮件完成确认。'
+>>>>>>> origin/main
       },
       lang: {
         groupAria: '语言'
@@ -16538,6 +16598,7 @@ body::after {
       if (!panel) return;
       var LS_SUPA_URL = 'timewheel-supabase-url';
       var LS_SUPA_KEY = 'timewheel-supabase-anon-key';
+<<<<<<< HEAD
       var elLead = document.getElementById('nyeCloudLead');
       var elStatus = document.getElementById('nyeCloudStatus');
       var elSetup = document.getElementById('nyeCloudSetup');
@@ -16586,6 +16647,15 @@ body::after {
         var em = String(email || '').trim();
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em);
       }
+=======
+      var elCfg = document.getElementById('nyeCloudConfigMissing');
+      var elStatus = document.getElementById('nyeCloudStatus');
+      var elAuth = document.getElementById('nyeCloudAuth');
+      var elSigned = document.getElementById('nyeCloudSigned');
+      var elSignedEmail = document.getElementById('nyeCloudSignedEmail');
+      var inEmail = document.getElementById('nyeCloudEmail');
+      var inPass = document.getElementById('nyeCloudPassword');
+>>>>>>> origin/main
       function nyeGetSupabaseConfig() {
         var u = typeof window.NYE_SUPABASE_URL === 'string' ? window.NYE_SUPABASE_URL.trim() : '';
         var k = typeof window.NYE_SUPABASE_ANON_KEY === 'string' ? window.NYE_SUPABASE_ANON_KEY.trim() : '';
@@ -16674,6 +16744,7 @@ body::after {
         elStatus.textContent = msg || '';
         elStatus.classList.toggle('nye-cloud-status--err', !!isErr);
       }
+<<<<<<< HEAD
       function mapCloudErrorMessage(errLike) {
         var raw = '';
         if (typeof errLike === 'string') raw = errLike;
@@ -16773,10 +16844,23 @@ body::after {
         }
         if (elLead) elLead.style.display = '';
         if (elSetup) elSetup.style.display = 'none';
+=======
+      function refreshCloudUI(session) {
+        var cfg = nyeGetSupabaseConfig();
+        if (!cfg) {
+          if (elCfg) elCfg.hidden = false;
+          if (elAuth) elAuth.style.display = 'none';
+          if (elSigned) elSigned.classList.remove('nye-cloud-signed--on');
+          setStatus('');
+          return;
+        }
+        if (elCfg) elCfg.hidden = true;
+>>>>>>> origin/main
         var user = session && session.user;
         if (user) {
           if (elAuth) elAuth.style.display = 'none';
           if (elSigned) elSigned.classList.add('nye-cloud-signed--on');
+<<<<<<< HEAD
           if (elSignedEmail) {
             var ident =
               (user.email && String(user.email)) ||
@@ -16785,6 +16869,9 @@ body::after {
               (user.id && String(user.id));
             elSignedEmail.textContent = (t('account.cloudSignedInAs') || '') + ': ' + ident;
           }
+=======
+          if (elSignedEmail) elSignedEmail.textContent = (t('account.cloudSignedInAs') || '') + ': ' + (user.email || user.id);
+>>>>>>> origin/main
         } else {
           if (elAuth) elAuth.style.display = '';
           if (elSigned) elSigned.classList.remove('nye-cloud-signed--on');
@@ -16840,7 +16927,11 @@ body::after {
         ensureSupabaseClient(function (err, client) {
           if (err) {
             if (err.message === 'no_config') {
+<<<<<<< HEAD
               setStatus(t('account.cloudNeedSetupFields'), true);
+=======
+              setStatus('');
+>>>>>>> origin/main
               refreshCloudUI(null);
               return;
             }
@@ -16858,10 +16949,13 @@ body::after {
             alert(t('account.cloudNeedPassword'));
             return;
           }
+<<<<<<< HEAD
           if (!nyeEmailBasicValid(em)) {
             alert(t('account.cloudEmailTypoHint'));
             return;
           }
+=======
+>>>>>>> origin/main
           withClient(function (client) {
             client.auth
               .signUp({ email: em, password: pw })
@@ -16871,6 +16965,7 @@ body::after {
                 refreshCloudUI(res.data && res.data.session);
               })
               .catch(function (e) {
+<<<<<<< HEAD
                 setStatus(mapCloudErrorMessage(e), true);
               });
           });
@@ -16911,6 +17006,9 @@ body::after {
               })
               .catch(function (e) {
                 setStatus(mapCloudErrorMessage(e), true);
+=======
+                setStatus((e && e.message) || t('account.cloudError'), true);
+>>>>>>> origin/main
               });
           });
         });
@@ -16922,10 +17020,13 @@ body::after {
             alert(t('account.cloudNeedPassword'));
             return;
           }
+<<<<<<< HEAD
           if (!nyeEmailBasicValid(em)) {
             alert(t('account.cloudEmailTypoHint'));
             return;
           }
+=======
+>>>>>>> origin/main
           withClient(function (client) {
             client.auth
               .signInWithPassword({ email: em, password: pw })
@@ -16935,6 +17036,7 @@ body::after {
                 refreshCloudUI(res.data && res.data.session);
               })
               .catch(function (e) {
+<<<<<<< HEAD
                 setStatus(mapCloudErrorMessage(e), true);
               });
           });
@@ -17032,6 +17134,9 @@ body::after {
               })
               .catch(function (e) {
                 setStatus(mapCloudErrorMessage(e), true);
+=======
+                setStatus((e && e.message) || t('account.cloudError'), true);
+>>>>>>> origin/main
               });
           });
         });
@@ -17063,7 +17168,11 @@ body::after {
                   setStatus(t('account.cloudDone'));
                 });
             }).catch(function (e) {
+<<<<<<< HEAD
               setStatus(mapCloudErrorMessage(e), true);
+=======
+              setStatus((e && e.message) || t('account.cloudError'), true);
+>>>>>>> origin/main
             });
           });
         });
@@ -17091,7 +17200,11 @@ body::after {
                   setStatus(t('account.cloudDone'));
                 });
             }).catch(function (e) {
+<<<<<<< HEAD
               setStatus(mapCloudErrorMessage(e), true);
+=======
+              setStatus((e && e.message) || t('account.cloudError'), true);
+>>>>>>> origin/main
             });
           });
         });
@@ -17117,7 +17230,10 @@ body::after {
       function initCloudPaneReady() {
         refreshCloudUI(null);
         if (nyeGetSupabaseConfig()) {
+<<<<<<< HEAD
           fetchProviderStatus();
+=======
+>>>>>>> origin/main
           ensureSupabaseClient(function (err, client) {
             if (err || !client) return;
             client.auth.getSession().then(function (res) {

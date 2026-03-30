@@ -19,9 +19,14 @@ This guide deploys Nye Clock without VPS using:
 2. Select repo: `Adonyth/NyeClock`
 3. Set **Root directory** to `Adonyth`
 4. Build settings:
+<<<<<<< HEAD
    - **Build command:** `npm run build`  
      (copies `tw_.html` → `index.html` so the default `/` document matches the latest app; Cloudflare Pages serves `index.html` if present.)
    - **Build output directory:** `.`（项目根，即 `Adonyth` 目录本身；若界面留空且等价于根目录亦可）
+=======
+   - Build command: *(leave empty)*
+   - Build output directory: *(leave empty)*
+>>>>>>> origin/main
 5. Deploy.
 
 ## 3) Pages environment variables
@@ -32,10 +37,13 @@ In Cloudflare Pages -> your project -> Settings -> Environment variables, add fo
 - `SUPABASE_ANON_KEY` = your Supabase anon public key
 - `OAUTH_REDIRECT` = your final Pages URL or custom domain (e.g. `https://nyeclock.pages.dev`)
 
+<<<<<<< HEAD
 These are **not** read from `index.html` — they are injected at runtime by the **Pages Function** `functions/api/cloud-config.js`. The browser loads `https://<your-domain>/api/cloud-config` and the app applies them before sign-up.
 
 If you skip `OAUTH_REDIRECT`, the app falls back to `location.origin + '/'` for OAuth redirects.
 
+=======
+>>>>>>> origin/main
 Then trigger a redeploy.
 
 ## 4) Supabase redirect settings
@@ -55,6 +63,7 @@ After deploy:
 
 - Open `https://<your-pages-domain>/api/health` -> should return `{ "ok": true, ... }`
 - Open `https://<your-pages-domain>/api/cloud-config` -> should return Supabase config JSON
+<<<<<<< HEAD
 - Open app root `/` -> serves `index.html`（部署前运行 `npm run build` 使 `index.html` 与 `tw_.html` 一致）
 - **My account → Cloud**：应直接显示邮箱/手机/OAuth 与注册、登录（无需在页面里填 URL/key；由 `/api/cloud-config` 注入）
 
@@ -66,3 +75,7 @@ After deploy:
    - 若保持「需邮箱确认」，界面会提示用户查收邮件——属正常流程。
 3. **URL Configuration**：`Site URL` 与 **Redirect URLs** 必须包含你的 Pages 域名（见上文 §4）。
 4. 重新部署后，用无痕窗口测试：**注册 → 登录 → 上传/下载**（依赖表 `nye_user_data` 与 RLS，见 `supabase/nye_user_data.sql`）。
+=======
+- Open app root `/` -> should render `tw_.html` (via `_redirects`)
+- In My Account -> Cloud, register/login directly without filling URL/key
+>>>>>>> origin/main
