@@ -1,0 +1,12 @@
+{
+  "name": "Nye Clock",
+  "short_name": "Nye Clock",
+  "description": "Symbolic celestial time — sexagenary cycle instrument",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0e18",
+  "theme_color": "#0a0e18",
+  "icons": []
+}
