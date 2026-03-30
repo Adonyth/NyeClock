@@ -16341,6 +16341,8 @@ body::after {
       var supaScriptRequested = false;
       var panel = document.getElementById('nyeCloudPanel');
       if (!panel) return;
+      var LS_SUPA_URL = 'timewheel-supabase-url';
+      var LS_SUPA_KEY = 'timewheel-supabase-anon-key';
       var elCfg = document.getElementById('nyeCloudConfigMissing');
       var elStatus = document.getElementById('nyeCloudStatus');
       var elAuth = document.getElementById('nyeCloudAuth');
@@ -16351,8 +16353,49 @@ body::after {
       function nyeGetSupabaseConfig() {
         var u = typeof window.NYE_SUPABASE_URL === 'string' ? window.NYE_SUPABASE_URL.trim() : '';
         var k = typeof window.NYE_SUPABASE_ANON_KEY === 'string' ? window.NYE_SUPABASE_ANON_KEY.trim() : '';
+        if (!u) {
+          try {
+            u = (localStorage.getItem(LS_SUPA_URL) || '').trim();
+          } catch (eLs1) {}
+        }
+        if (!k) {
+          try {
+            k = (localStorage.getItem(LS_SUPA_KEY) || '').trim();
+          } catch (eLs2) {}
+        }
         if (!u || !k) return null;
         return { url: u, key: k };
+      }
+      function bootstrapCloudConfigFromBackend() {
+        if (window.location.protocol === 'file:') return Promise.resolve(false);
+        return fetch('/api/cloud-config', { method: 'GET', cache: 'no-store' })
+          .then(function (res) {
+            if (!res.ok) return null;
+            return res.json();
+          })
+          .then(function (json) {
+            if (!json || json.error || !json.supabaseUrl || !json.supabaseAnonKey) return false;
+            var u = String(json.supabaseUrl || '').trim();
+            var k = String(json.supabaseAnonKey || '').trim();
+            if (!u || !k) return false;
+            window.NYE_SUPABASE_URL = u;
+            window.NYE_SUPABASE_ANON_KEY = k;
+            if (typeof json.oauthRedirect === 'string' && json.oauthRedirect.trim()) {
+              window.NYE_OAUTH_REDIRECT = json.oauthRedirect.trim();
+            } else {
+              try {
+                window.NYE_OAUTH_REDIRECT = window.location.origin + '/';
+              } catch (eOr) {}
+            }
+            try {
+              localStorage.setItem(LS_SUPA_URL, u);
+              localStorage.setItem(LS_SUPA_KEY, k);
+            } catch (eBoot) {}
+            return true;
+          })
+          .catch(function () {
+            return false;
+          });
       }
       function nyeCollectLocalPayload() {
         var o = { _v: 1 };
@@ -16596,15 +16639,20 @@ body::after {
           }, 0);
         });
       }
-      refreshCloudUI(null);
-      if (nyeGetSupabaseConfig()) {
-        ensureSupabaseClient(function (err, client) {
-          if (err || !client) return;
-          client.auth.getSession().then(function (res) {
-            refreshCloudUI(res.data && res.data.session);
+      function initCloudPaneReady() {
+        refreshCloudUI(null);
+        if (nyeGetSupabaseConfig()) {
+          ensureSupabaseClient(function (err, client) {
+            if (err || !client) return;
+            client.auth.getSession().then(function (res) {
+              refreshCloudUI(res.data && res.data.session);
+            });
           });
-        });
+        }
       }
+      bootstrapCloudConfigFromBackend().then(function () {
+        initCloudPaneReady();
+      });
     })();
     initLocale();
     initCalendarTimeArchitecture();
