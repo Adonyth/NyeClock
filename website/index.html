@@ -152,7 +152,7 @@
       <p class="tagline tagline--note">Use this page on the <strong>public HTTPS site</strong> (bookmark below). Opening a saved copy from disk cannot load cloud login for the app.</p>
       <p class="tagline tagline--note"><a id="linkCanonical" href="https://nyeclock.pages.dev/website/">https://nyeclock.pages.dev/website/</a></p>
       <div class="actions">
-        <a class="btn btn--primary" id="linkApp" href="https://nyeclock.pages.dev/">Open web app</a>
+        <a class="btn btn--primary" id="linkApp" href="../tw_.html">Open web app</a>
         <a class="btn btn--primary" id="linkDownloadApp" href="#">Download for macOS (Apple&nbsp;Silicon)</a>
       </div>
       <p class="hint" id="dlHint"></p>
@@ -179,20 +179,20 @@
     (function () {
       /** Public origin for the deployed app + DMG (change here if you use a custom domain). */
       var NYE_PUBLIC_ORIGIN = 'https://nyeclock.pages.dev';
+      /** Same-origin app entry (avoids stale root `/` or `index.html` without top bar). */
+      var appEntry = new URL('../tw_.html', window.location.href).href;
 
-      var app = document.getElementById('linkApp');
-      if (app) {
-        app.setAttribute('href', NYE_PUBLIC_ORIGIN.replace(/\/$/, '') + '/');
-      }
+      var linkApp = document.getElementById('linkApp');
+      if (linkApp) linkApp.setAttribute('href', appEntry);
+
       var canon = document.getElementById('linkCanonical');
       if (canon) {
         canon.setAttribute('href', NYE_PUBLIC_ORIGIN.replace(/\/$/, '') + '/website/');
       }
-      var baseApp = NYE_PUBLIC_ORIGIN.replace(/\/$/, '');
       var lr = document.getElementById('landingRegister');
       var ll = document.getElementById('landingLogin');
-      if (lr) lr.setAttribute('href', baseApp + '/?nye=cloud&register=1');
-      if (ll) ll.setAttribute('href', baseApp + '/?nye=cloud&login=1');
+      if (lr) lr.setAttribute('href', appEntry + '?nye=cloud&register=1');
+      if (ll) ll.setAttribute('href', appEntry + '?nye=cloud&login=1');
 
       // Must match desktop/package.json "version" and DMG filenames.
       var NYE_DESKTOP_VERSION = '1.0.0';

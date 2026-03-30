@@ -43,10 +43,10 @@ Static files live in **`website/`**:
 
 **URLs on Pages:**
 
-- App: `https://<your-domain>/` (or `/index.html`)
+- App (full UI / top bar): `https://<your-domain>/tw_.html` (root `/` may not match if deploy skipped `npm run build`)
 - Landing: `https://<your-domain>/website/` or `https://<your-domain>/website/index.html`
 
-The landing page’s “Open web app” button uses `../index.html` when the page is under `/website/`; if you later move the landing to the root, adjust that link.
+The landing page’s “Open web app” uses `../tw_.html` (resolved from `/website/`) so it always opens the same file as the main SPA.
 
 ## 4. Download links (DMG)
 
