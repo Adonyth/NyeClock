@@ -11,16 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-<<<<<<< HEAD
   <!-- 云端：生产环境由 Cloudflare Pages Function /api/cloud-config 注入 Supabase（面板环境变量 SUPABASE_URL、SUPABASE_ANON_KEY）。本地 file:// 或自托管时可取消注释并手动填入： -->
-=======
-  <!--
-    Maintainer only (not shown to users): ship published builds with cloud enabled by uncommenting and setting:
-      window.NYE_SUPABASE_URL, window.NYE_SUPABASE_ANON_KEY
-    One-time DB setup: Adonyth/supabase/nye_user_data.sql. Enable auth providers in the project dashboard.
-    If the app is opened as file://, set window.NYE_OAUTH_REDIRECT to your https app URL (also allowlisted there).
-  -->
->>>>>>> origin/main
   <!-- <script>window.NYE_SUPABASE_URL="https://YOUR_PROJECT.supabase.co";window.NYE_SUPABASE_ANON_KEY="YOUR_ANON_KEY";</script> -->
   <title id="docTitle">Nye Clock</title>
   <!-- Three.js: main-page flagship Sun–Earth–Moon WebGL instrument (sync load before inline scripts) -->
@@ -16613,21 +16604,13 @@ body::after {
       }
       function bootstrapCloudConfigFromBackend() {
         if (window.location.protocol === 'file:') return Promise.resolve(false);
-<<<<<<< HEAD
         return fetch('/api/cloud-config', { method: 'GET', cache: 'no-store' })
-=======
-        return fetch('/api/cloud-config', { method: 'GET' })
->>>>>>> origin/main
           .then(function (res) {
             if (!res.ok) return null;
             return res.json();
           })
           .then(function (json) {
-<<<<<<< HEAD
             if (!json || json.error || !json.supabaseUrl || !json.supabaseAnonKey) return false;
-=======
-            if (!json || !json.supabaseUrl || !json.supabaseAnonKey) return false;
->>>>>>> origin/main
             var u = String(json.supabaseUrl || '').trim();
             var k = String(json.supabaseAnonKey || '').trim();
             if (!u || !k) return false;
@@ -16635,13 +16618,10 @@ body::after {
             window.NYE_SUPABASE_ANON_KEY = k;
             if (typeof json.oauthRedirect === 'string' && json.oauthRedirect.trim()) {
               window.NYE_OAUTH_REDIRECT = json.oauthRedirect.trim();
-<<<<<<< HEAD
             } else {
               try {
                 window.NYE_OAUTH_REDIRECT = window.location.origin + '/';
               } catch (eOr) {}
-=======
->>>>>>> origin/main
             }
             try {
               localStorage.setItem(LS_SUPA_URL, u);

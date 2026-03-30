@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Adonyth
 
 Nye Clock web source (`tw_.html`, `manifest.json`).
@@ -144,6 +143,3 @@ What it does:
 - installs and starts `systemd` service (`nye-clock`)
 - configures nginx reverse proxy
 - enables HTTPS automatically when `DOMAIN` + `EMAIL` are provided
-=======
-# NyeClock
->>>>>>> origin/main
