@@ -1,0 +1,2 @@
+# Prevent Git from applying line-ending conversion to installers (avoids corrupt DMG).
+*.dmg binary

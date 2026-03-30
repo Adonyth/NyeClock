@@ -5,7 +5,7 @@
 1. **Set production app URL** (the URL the Electron shell should open):
 
    ```bash
-   export NYE_CLOCK_APP_URL="https://YOUR_PROJECT.pages.dev/"
+   export NYE_CLOCK_APP_URL="https://YOUR_PROJECT.pages.dev/tw_.html"
    ```
 
 2. **Build on macOS:**
@@ -33,7 +33,7 @@
 
 The workflow `.github/workflows/release-desktop.yml` builds a DMG on **workflow_dispatch** or when a tag `v*` is pushed (requires **macOS** runner and may need Apple credentials for signed builds).
 
-In the GitHub repo, set **Actions variable** `NYE_CLOCK_APP_URL` to your live Pages URL (e.g. `https://your-project.pages.dev/`). If unset, the workflow defaults to `https://nyeclock.pages.dev/`.
+In the GitHub repo, set **Actions variable** `NYE_CLOCK_APP_URL` to your live app URL (e.g. `https://your-project.pages.dev/tw_.html`). If unset, the workflow defaults to `https://nyeclock.pages.dev/tw_.html`.
 
 Unsigned DMGs work for local testing; public distribution usually needs **codesign + notarization** (see electron-builder docs).
 

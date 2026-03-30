@@ -8,6 +8,7 @@ Option 1 — host the DMG on this site (same origin as the landing page)
    bash scripts/attach-dmg-to-website.sh desktop/dist/NyeClock-1.0.0-arm64.dmg
 
 3) Commit and push (the file is gitignored by default to avoid accidental huge commits):
+   The repo root `.gitattributes` marks `*.dmg` as binary so Git does not corrupt the file.
    git add -f website/downloads/NyeClock-1.0.0-arm64.dmg
    git commit -m "chore: add macOS DMG for site download"
    git push

@@ -1,0 +1,9 @@
+# Fresh landing page HTML so “Open web app” updates aren’t stuck behind CDN cache.
+/website/*
+  Cache-Control: no-cache, must-revalidate
+
+/tw_.html
+  Cache-Control: public, max-age=300
+
+/index.html
+  Cache-Control: public, max-age=300

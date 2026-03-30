@@ -29,7 +29,7 @@ jobs:
         env:
           NYE_CLOCK_APP_URL: ${{ vars.NYE_CLOCK_APP_URL }}
         run: |
-          export NYE_CLOCK_APP_URL="${NYE_CLOCK_APP_URL:-https://nyeclock.pages.dev/}"
+          export NYE_CLOCK_APP_URL="${NYE_CLOCK_APP_URL:-https://nyeclock.pages.dev/tw_.html}"
           npm run dist:mac
 
       - name: Upload DMG artifact

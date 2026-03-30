@@ -5,11 +5,13 @@
 const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 
-const DEFAULT_APP_URL = 'https://nyeclock.pages.dev/';
+/** Must match the SPA entry served by Pages (same UI as tw_.html, incl. top bar). */
+const DEFAULT_APP_URL = 'https://nyeclock.pages.dev/tw_.html';
 
 function getRemoteUrl() {
   const fromEnv = process.env.NYE_CLOCK_APP_URL && String(process.env.NYE_CLOCK_APP_URL).trim();
   const u = fromEnv || DEFAULT_APP_URL;
+  if (/\.html?$/i.test(u)) return u;
   return u.endsWith('/') ? u : u + '/';
 }
 

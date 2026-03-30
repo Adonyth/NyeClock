@@ -12,10 +12,10 @@ Loads the **deployed** Nye Clock site by default, or **`../index.html`** in deve
 Point the window at your Cloudflare Pages URL (or any HTTPS origin that serves the app):
 
 ```bash
-export NYE_CLOCK_APP_URL="https://YOUR_PROJECT.pages.dev/"
+export NYE_CLOCK_APP_URL="https://YOUR_PROJECT.pages.dev/tw_.html"
 ```
 
-If unset, the default in `main.js` is `https://nyeclock.pages.dev/` — **change this** before publishing a public DMG.
+If unset, the default in `main.js` is `https://nyeclock.pages.dev/tw_.html` — **change this** before publishing a public DMG.
 
 ## Development
 
@@ -32,7 +32,7 @@ npm start
 ```bash
 cd desktop
 npm install
-NYE_CLOCK_APP_URL="https://YOUR_PROJECT.pages.dev/" npm run dist:mac
+NYE_CLOCK_APP_URL="https://YOUR_PROJECT.pages.dev/tw_.html" npm run dist:mac
 ```
 
 Artifacts appear under `desktop/dist/` (e.g. `NyeClock-1.0.0-arm64.dmg`).

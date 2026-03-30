@@ -152,7 +152,7 @@
       <p class="tagline tagline--note">Use this page on the <strong>public HTTPS site</strong> (bookmark below). Opening a saved copy from disk cannot load cloud login for the app.</p>
       <p class="tagline tagline--note"><a id="linkCanonical" href="https://nyeclock.pages.dev/website/">https://nyeclock.pages.dev/website/</a></p>
       <div class="actions">
-        <a class="btn btn--primary" id="linkApp" href="../tw_.html">Open web app</a>
+        <a class="btn btn--primary" id="linkApp" href="https://nyeclock.pages.dev/tw_.html">Open web app</a>
         <a class="btn btn--primary" id="linkDownloadApp" href="#">Download for macOS (Apple&nbsp;Silicon)</a>
       </div>
       <p class="hint" id="dlHint"></p>
@@ -179,11 +179,11 @@
     (function () {
       /** Public origin for the deployed app + DMG (change here if you use a custom domain). */
       var NYE_PUBLIC_ORIGIN = 'https://nyeclock.pages.dev';
-      /** Same-origin app entry (avoids stale root `/` or `index.html` without top bar). */
-      var appEntry = new URL('../tw_.html', window.location.href).href;
+      /** Canonical SPA path (always has account chrome / Sign Up · Log In). Do not use `/` here. */
+      var APP_ENTRY = NYE_PUBLIC_ORIGIN.replace(/\/$/, '') + '/tw_.html';
 
       var linkApp = document.getElementById('linkApp');
-      if (linkApp) linkApp.setAttribute('href', appEntry);
+      if (linkApp) linkApp.setAttribute('href', APP_ENTRY);
 
       var canon = document.getElementById('linkCanonical');
       if (canon) {
@@ -191,8 +191,8 @@
       }
       var lr = document.getElementById('landingRegister');
       var ll = document.getElementById('landingLogin');
-      if (lr) lr.setAttribute('href', appEntry + '?nye=cloud&register=1');
-      if (ll) ll.setAttribute('href', appEntry + '?nye=cloud&login=1');
+      if (lr) lr.setAttribute('href', APP_ENTRY + '?nye=cloud&register=1');
+      if (ll) ll.setAttribute('href', APP_ENTRY + '?nye=cloud&login=1');
 
       // Must match desktop/package.json "version" and DMG filenames.
       var NYE_DESKTOP_VERSION = '1.0.0';
@@ -232,19 +232,8 @@
         var url = dmgUrl();
         var fname = 'NyeClock-' + NYE_DESKTOP_VERSION + '-' + DMG_ARCH + '.dmg';
         dl.setAttribute('href', url);
-        if (DMG_SOURCE === 'site') {
-          try {
-            if (window.location.origin === new URL(NYE_PUBLIC_ORIGIN).origin) {
-              dl.setAttribute('download', fname);
-            } else {
-              dl.removeAttribute('download');
-            }
-          } catch (eDl) {
-            dl.removeAttribute('download');
-          }
-        } else {
-          dl.removeAttribute('download');
-        }
+        /* Omit `download` — same-origin large binaries can be corrupted by forced download in some browsers. */
+        dl.removeAttribute('download');
         if (hint) {
           hint.textContent =
             'Installer: ' +
