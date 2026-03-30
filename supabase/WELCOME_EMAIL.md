@@ -1,59 +1,62 @@
 # Welcome email after registration (email only)
 
-This project includes an Edge Function **`welcome-email`** that sends a **welcome message** to the user’s **email** using **Resend**.
+Edge Function **`welcome-email`** sends a **welcome** message via **Resend** when the user’s **email address** is registered / verified on Supabase Auth.
 
-- **Email/password or magic-link signups:** `auth.users` has an `email` → welcome email can be sent.
-- **Phone-only OTP:** there is often **no email** on the user record → the function **skips** sending (SMS welcome is not implemented; add Twilio etc. separately if needed).
+- **Phone-only OTP:** usually no `email` on the row → function returns `{ skipped: true }`.
+
+## When the email is sent (important)
+
+| Situation | Sent? |
+|-----------|--------|
+| Signup with **“Confirm email” off**, OAuth, or provider that sets `email_confirmed_at` on insert | **Yes** on **INSERT** |
+| Signup with **“Confirm email” on** (common email/password): row is inserted **before** the user clicks the confirmation link | **No** on INSERT (pending verify) |
+| User **clicks the confirmation link** | **Yes** on **UPDATE** when `email_confirmed_at` becomes set |
+
+So the Database Webhook must fire on **`auth.users` for both Insert and Update**. If you only enabled **Insert**, users who must confirm their email will **never** get the welcome email.
 
 ## 1. Resend
 
-1. Create an account at [resend.com](https://resend.com), verify your **sending domain**, and create an **API key**.
-2. Choose a **From** address on that domain, e.g. `Nye Clock <hello@yourdomain.com>`.
+1. [resend.com](https://resend.com) — verify domain, create API key.
+2. **From** address on that domain, e.g. `Nye Clock <hello@yourdomain.com>`.
 
 ## 2. Deploy the Edge Function
 
-Install [Supabase CLI](https://supabase.com/docs/guides/cli), link your project, then:
-
 ```bash
-cd /path/to/Adonyth
+cd /path/to/repo
 supabase functions deploy welcome-email --no-verify-jwt
 ```
 
-Set **secrets** (Dashboard → Project Settings → Edge Functions, or CLI):
+**Secrets** (Dashboard → Project Settings → Edge Functions, or CLI):
 
-| Secret | Example |
+| Secret | Purpose |
 |--------|---------|
-| `RESEND_API_KEY` | `re_...` |
-| `RESEND_FROM` | `Nye Clock <hello@yourdomain.com>` |
-| `WELCOME_WEBHOOK_SECRET` | long random string (optional; recommended) |
+| `RESEND_API_KEY` | Resend API key |
+| `RESEND_FROM` | `Name <addr@yourdomain.com>` |
+| `WELCOME_WEBHOOK_SECRET` | Optional; if set, webhook must send header `x-webhook-secret: <same>` |
+| `WELCOME_SEND_ON_INSERT_UNCONFIRMED` | Optional: `true` or `1` to also send welcome on **INSERT** when email is **not** confirmed yet (old behavior; can duplicate if you also use UPDATE) |
+| `WELCOME_WEBHOOK_REQUIRE_AUTH_USERS` | Optional: `true` to ignore payloads unless `schema=auth` and `table=users` |
 
-If `WELCOME_WEBHOOK_SECRET` is set, the webhook request must include header:
-
-`x-webhook-secret: <same value>`
-
-## 3. Database Webhook (auth.users INSERT)
+## 3. Database Webhook (`auth.users`)
 
 1. Supabase Dashboard → **Database** → **Webhooks** → **Create**.
-2. **Table:** `auth.users` (schema `auth`).
-3. **Events:** Insert.
-4. **HTTP Request URL:**  
-   `https://<PROJECT_REF>.supabase.co/functions/v1/welcome-email`
-5. **HTTP Headers** (if you use the secret):  
-   - Name: `x-webhook-secret`  
-   - Value: same as `WELCOME_WEBHOOK_SECRET`
+2. **Table:** `users` in schema **`auth`** (shown as `auth.users`).
+3. **Events:** enable **Insert** and **Update** (both).
+4. **URL:** `https://<PROJECT_REF>.supabase.co/functions/v1/welcome-email`
+5. **Headers** (if using secret): `x-webhook-secret` = same as `WELCOME_WEBHOOK_SECRET`.
 6. Save.
 
-Supabase will POST a JSON body that includes `record` with the new user row. The function reads `record.email`.
+## 4. Avoid duplicate emails with Supabase “Confirm signup”
 
-## 4. Avoid duplicate / spam
-
-- Trigger only on **INSERT** (not on every login).
-- If you also send Supabase’s built-in “Confirm signup” email, users may get **two** emails unless you disable or merge templates; adjust **Authentication → Email Templates** in the Dashboard as needed.
+Users may still get Supabase’s own confirmation email **and** this welcome. Adjust **Authentication → Email Templates** / confirmation settings as needed.
 
 ## 5. Troubleshooting
 
-- **503 `missing_resend_env`:** set `RESEND_API_KEY` and `RESEND_FROM` on the function.
-- **401:** webhook secret mismatch — align Dashboard header with `WELCOME_WEBHOOK_SECRET`.
-- **502 `resend_failed`:** check Resend dashboard logs, domain verification, and “from” address.
+| Symptom | What to check |
+|---------|----------------|
+| **503** `missing_resend_env` | Set `RESEND_API_KEY` and `RESEND_FROM` on the function |
+| **401** | Webhook `x-webhook-secret` must match `WELCOME_WEBHOOK_SECRET` |
+| **502** `resend_failed` | Resend logs, domain verification, From address |
+| **Never get welcome** with “confirm email” on | Webhook must include **Update**, not only Insert |
+| **Skipped** `insert_pending_email_confirm` | Expected on insert when confirmation required; user should get mail after **Update** when they confirm |
 
 Function source: `supabase/functions/welcome-email/index.ts`.
