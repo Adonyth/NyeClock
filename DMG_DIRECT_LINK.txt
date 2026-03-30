@@ -1,0 +1,6 @@
+Nye Clock — macOS DMG (Apple Silicon), direct download on Cloudflare Pages.
+No landing page required; paste this URL in email or bookmarks:
+
+https://nyeclock.pages.dev/download/nyeclock-mac-arm64.dmg
+
+(Full path on the same host: /website/downloads/NyeClock-1.0.0-arm64.dmg — same file.)

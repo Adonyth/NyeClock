@@ -14,8 +14,9 @@ Option 1 — host the DMG on this site (same origin as the landing page)
    git push
 
 4) Wait for Cloudflare Pages to finish deploying, then verify in a browser:
-   https://<your-pages-domain>/website/downloads/NyeClock-1.0.0-arm64.dmg
-   It should download the binary, not an HTML page.
+   Short URL (recommended): https://<your-pages-domain>/download/nyeclock-mac-arm64.dmg
+   Full path: https://<your-pages-domain>/website/downloads/NyeClock-1.0.0-arm64.dmg
+   Either should download the binary, not an HTML page.
 
 Version must stay in sync: NYE_DESKTOP_VERSION in ../index.html and version in desktop/package.json.
 

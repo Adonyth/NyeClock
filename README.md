@@ -2,6 +2,14 @@
 
 Nye Clock web source (`tw_.html`, `manifest.json`).
 
+## macOS DMG — direct download (no `/website/` landing page)
+
+Use this short URL on Cloudflare Pages (same file as the long path under `/website/downloads/`):
+
+**`https://nyeclock.pages.dev/download/nyeclock-mac-arm64.dmg`**
+
+Copy-paste source of truth: `DMG_DIRECT_LINK.txt` in this repo.
+
 ## GitHub 仓库（`Adonyth/NyeClock`，分支 `main`）
 
 本机首次配置远程并同步：
@@ -151,7 +159,8 @@ What it does:
 | 总览（GitHub、Pages、官网路径、下载链接） | `DISTRIBUTION.md` |
 | GitHub Releases、打 DMG、CI | `RELEASES.md` |
 | 注册后欢迎邮件（Resend + Database Webhook） | `supabase/WELCOME_EMAIL.md` |
-| 官网落地页 | `website/index.html` |
+| 官网落地页（可选） | `website/index.html` |
+| **DMG 直链（推荐发信 / 书签）** | `https://nyeclock.pages.dev/download/nyeclock-mac-arm64.dmg` · 见 `DMG_DIRECT_LINK.txt` |
 | Electron 桌面壳与 `NYE_CLOCK_APP_URL` | `desktop/README.md` |
 
 说明：纯手机号注册若无邮箱，欢迎邮件会跳过；需要短信欢迎需另接 Twilio 等。
