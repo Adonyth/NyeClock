@@ -20,7 +20,7 @@ This guide deploys Nye Clock without VPS using:
 3. Set **Root directory** to `Adonyth`
 4. Build settings:
    - **Build command:** `npm run build`  
-     (copies `tw_.html` → `index.html` so the default `/` document matches the latest app; Cloudflare Pages serves `index.html` if present.)
+     (copies `tw_.html` → `index.html` for parity; **`_redirects` maps `/` to `tw_.html`**, so the live site root always serves the same file as `tw_.html` even if a deploy skipped the copy step.)
    - **Build output directory:** `.`（项目根，即 `Adonyth` 目录本身；若界面留空且等价于根目录亦可）
 5. Deploy.
 
@@ -59,7 +59,7 @@ After deploy:
 
 - Open `https://<your-pages-domain>/api/health` -> should return `{ "ok": true, ... }`
 - Open `https://<your-pages-domain>/api/cloud-config` -> should return Supabase config JSON
-- Open app root `/` -> serves `index.html`（部署前运行 `npm run build` 使 `index.html` 与 `tw_.html` 一致）
+- Open app root `/` -> rewrites to **`tw_.html`**（见 `_redirects`）；`/tw_.html` 与 `/` 为同一应用源码
 - **My account → Cloud**：应直接显示邮箱/手机/OAuth 与注册、登录（无需在页面里填 URL/key；由 `/api/cloud-config` 注入）
 - **macOS DMG（本站托管，方案 1）**：将 `website/downloads/NyeClock-1.0.0-arm64.dmg` 提交并部署后，访问 `https://<your-pages-domain>/website/downloads/NyeClock-1.0.0-arm64.dmg` 应触发下载（非 HTML）。详见 `website/downloads/README.txt` 与 `scripts/attach-dmg-to-website.sh`。
 

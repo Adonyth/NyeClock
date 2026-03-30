@@ -28,7 +28,43 @@
         linear-gradient(165deg, var(--bg1), var(--bg0));
       line-height: 1.6;
     }
-    .wrap { max-width: 880px; margin: 0 auto; padding: clamp(24px, 5vw, 48px) clamp(18px, 4vw, 32px) 80px; }
+    .official-auth {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 9999;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      padding: calc(8px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px));
+      pointer-events: none;
+    }
+    .official-auth > * {
+      pointer-events: auto;
+    }
+    .official-auth__btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+      color: #eef2ff;
+      font-family: inherit;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .official-auth__btn:hover {
+      background: color-mix(in srgb, var(--accent) 28%, transparent);
+    }
+    .wrap { max-width: 880px; margin: 0 auto; padding: clamp(52px, 9vw, 72px) clamp(18px, 4vw, 32px) 80px; }
     header { text-align: center; margin-bottom: clamp(28px, 5vw, 48px); }
     h1 {
       font-family: 'Cormorant Garamond', Georgia, serif;
@@ -100,15 +136,23 @@
       color: #eef2ff;
     }
     .hint { font-size: 0.82rem; color: var(--muted); margin-top: 12px; }
+    .tagline--note { font-size: 0.8rem; max-width: 38em; margin: 10px auto 0; color: var(--muted); }
+    .tagline--note a { color: color-mix(in srgb, var(--accent) 85%, var(--text)); }
   </style>
 </head>
 <body>
+  <div class="official-auth" role="group" aria-label="Account">
+    <a class="official-auth__btn" id="landingRegister" href="#">Sign Up</a>
+    <a class="official-auth__btn" id="landingLogin" href="#">Log In</a>
+  </div>
   <div class="wrap">
     <header>
       <h1>Nye Clock</h1>
       <p class="tagline">Symbolic celestial time — sexagenary cycle instrument. Open the web app in your browser, or download the macOS desktop app.</p>
+      <p class="tagline tagline--note">Use this page on the <strong>public HTTPS site</strong> (bookmark below). Opening a saved copy from disk cannot load cloud login for the app.</p>
+      <p class="tagline tagline--note"><a id="linkCanonical" href="https://nyeclock.pages.dev/website/">https://nyeclock.pages.dev/website/</a></p>
       <div class="actions">
-        <a class="btn btn--primary" id="linkApp" href="../index.html">Open web app</a>
+        <a class="btn btn--primary" id="linkApp" href="https://nyeclock.pages.dev/">Open web app</a>
         <a class="btn btn--primary" id="linkDownloadApp" href="#">Download for macOS (Apple&nbsp;Silicon)</a>
       </div>
       <p class="hint" id="dlHint"></p>
@@ -133,15 +177,22 @@
   </div>
   <script>
     (function () {
+      /** Public origin for the deployed app + DMG (change here if you use a custom domain). */
+      var NYE_PUBLIC_ORIGIN = 'https://nyeclock.pages.dev';
+
       var app = document.getElementById('linkApp');
       if (app) {
-        var path = window.location.pathname || '';
-        if (path.indexOf('/website') !== -1) {
-          app.setAttribute('href', '../index.html');
-        } else {
-          app.setAttribute('href', '/index.html');
-        }
+        app.setAttribute('href', NYE_PUBLIC_ORIGIN.replace(/\/$/, '') + '/');
       }
+      var canon = document.getElementById('linkCanonical');
+      if (canon) {
+        canon.setAttribute('href', NYE_PUBLIC_ORIGIN.replace(/\/$/, '') + '/website/');
+      }
+      var baseApp = NYE_PUBLIC_ORIGIN.replace(/\/$/, '');
+      var lr = document.getElementById('landingRegister');
+      var ll = document.getElementById('landingLogin');
+      if (lr) lr.setAttribute('href', baseApp + '/?nye=cloud&register=1');
+      if (ll) ll.setAttribute('href', baseApp + '/?nye=cloud&login=1');
 
       // Must match desktop/package.json "version" and DMG filenames.
       var NYE_DESKTOP_VERSION = '1.0.0';
@@ -155,16 +206,7 @@
       var DMG_ARCH = 'arm64';
 
       function siteDownloadsBase() {
-        var u = new URL(window.location.href);
-        var path = u.pathname;
-        if (!path.endsWith('/')) {
-          path = path.replace(/\/[^/]+$/, '/');
-        }
-        if (!path.endsWith('/')) path += '/';
-        u.pathname = path + 'downloads/';
-        u.hash = '';
-        u.search = '';
-        return u.toString();
+        return NYE_PUBLIC_ORIGIN.replace(/\/$/, '') + '/website/downloads/';
       }
 
       function githubDmgUrl() {
@@ -191,7 +233,15 @@
         var fname = 'NyeClock-' + NYE_DESKTOP_VERSION + '-' + DMG_ARCH + '.dmg';
         dl.setAttribute('href', url);
         if (DMG_SOURCE === 'site') {
-          dl.setAttribute('download', fname);
+          try {
+            if (window.location.origin === new URL(NYE_PUBLIC_ORIGIN).origin) {
+              dl.setAttribute('download', fname);
+            } else {
+              dl.removeAttribute('download');
+            }
+          } catch (eDl) {
+            dl.removeAttribute('download');
+          }
         } else {
           dl.removeAttribute('download');
         }

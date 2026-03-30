@@ -1427,10 +1427,14 @@ body::after {
       position: fixed;
       top: 0;
       right: 0;
-      z-index: 50;
+      z-index: 120;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
+      justify-content: flex-end;
       gap: 10px;
+      max-width: 100vw;
+      box-sizing: border-box;
       padding: calc(6px + env(safe-area-inset-top)) 12px 8px max(12px, env(safe-area-inset-right));
       pointer-events: none;
     }
@@ -1488,6 +1492,23 @@ body::after {
     }
     .auth-topbar__btn--solo {
       letter-spacing: 0.08em;
+    }
+    .nye-file-protocol-warn {
+      position: relative;
+      z-index: 95;
+      margin: 0;
+      padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
+      background: color-mix(in srgb, var(--accent-color) 14%, var(--card-bg));
+      border-bottom: 1px solid color-mix(in srgb, var(--accent-color) 38%, transparent);
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-color);
+      text-align: center;
+    }
+    .nye-file-protocol-warn a {
+      color: var(--accent-color);
+      font-weight: 600;
+      margin-left: 6px;
     }
     .panel-back-strip {
       display: flex;
@@ -7774,6 +7795,20 @@ body::after {
   </style>
 </head>
 <body>
+  <div id="nyeFileProtocolWarn" class="nye-file-protocol-warn" hidden role="alert">
+    <span data-i18n="app.fileProtocolWarn">Opened from disk (file://). Cloud sign-in needs the public HTTPS site:</span>
+    <a href="https://nyeclock.pages.dev/" data-i18n="app.fileProtocolLinkLabel">Open nyeclock.pages.dev</a>
+  </div>
+  <script>
+    (function () {
+      try {
+        if (window.location.protocol === 'file:') {
+          var el = document.getElementById('nyeFileProtocolWarn');
+          if (el) el.hidden = false;
+        }
+      } catch (e) {}
+    })();
+  </script>
   <!-- Timewheel: full single-file UI (reload from disk if your editor shows a truncated ~379-line version). -->
   <div class="app-shell app-shell--instrument">
     <header class="transient-top" id="transientTop" aria-label="Product">
@@ -7805,8 +7840,8 @@ body::after {
         </select>
       </label>
       <div class="auth-topbar" id="authTopbar" role="group" aria-label="Account">
-        <button type="button" class="auth-topbar__btn" id="authTopRegister" data-i18n="nav.register">Register</button>
-        <button type="button" class="auth-topbar__btn" id="authTopLogin" data-i18n="nav.login">Sign in</button>
+        <button type="button" class="auth-topbar__btn" id="authTopRegister" data-i18n="nav.register">Sign Up</button>
+        <button type="button" class="auth-topbar__btn" id="authTopLogin" data-i18n="nav.login">Log In</button>
         <button type="button" class="auth-topbar__btn auth-topbar__btn--solo" id="authTopAccount" hidden data-i18n="dock.account">My account</button>
       </div>
     </div>
@@ -8525,7 +8560,9 @@ body::after {
         productTitle: 'Nye Clock',
         tagline:
           'A single flagship instrument for the sexagenary cycle—stem and branch, solar rhythm, and the quality of the moment. Secondary depth lives one tap away.',
-        tagline2: 'Pull the title gently or hover to read more. This is symbolic time, not a Western zodiac map.'
+        tagline2: 'Pull the title gently or hover to read more. This is symbolic time, not a Western zodiac map.',
+        fileProtocolWarn: 'Opened from disk (file://). Cloud sign-in needs the public HTTPS site:',
+        fileProtocolLinkLabel: 'Open nyeclock.pages.dev'
       },
       dock: {
         backInstrument: '← Instrument',
@@ -8621,8 +8658,8 @@ body::after {
         natal: 'Natal 命',
         cycles: 'Cycles 运',
         themeLabel: 'Theme',
-        register: 'Register',
-        login: 'Sign in'
+        register: 'Sign Up',
+        login: 'Log In'
       },
       theme: {
         stellar: 'Stellar dark',
@@ -8930,7 +8967,9 @@ body::after {
         productTitle: 'Nye Clock',
         tagline:
           '以单一主钟承载六十甲子：天干、地支、节气与时刻气质。深层功能收纳于底部导航，需要时再展开。',
-        tagline2: '轻触标题或悬停可展开说明。此为符号化中式时间语境，非西洋黄道十二宫对照。'
+        tagline2: '轻触标题或悬停可展开说明。此为符号化中式时间语境，非西洋黄道十二宫对照。',
+        fileProtocolWarn: '当前为本地文件打开（file://），云端登录请使用公网 HTTPS 地址：',
+        fileProtocolLinkLabel: '打开 nyeclock.pages.dev'
       },
       dock: {
         backInstrument: '← 主钟',
@@ -17286,6 +17325,37 @@ body::after {
       bootstrapCloudConfigFromBackend().then(function () {
         initCloudPaneReady();
       });
+    })();
+    (function initNyeOpenFromLandingQuery() {
+      function run() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          if (p.get('nye') !== 'cloud') return;
+          var reg = p.get('register') === '1';
+          var log = p.get('login') === '1';
+          if (typeof window.showDockPanel === 'function') window.showDockPanel('account');
+          setTimeout(function () {
+            var nav = document.getElementById('accountSubnav');
+            var cloudBtn = nav && nav.querySelector('[data-account-pane="cloud"]');
+            if (cloudBtn) cloudBtn.click();
+          }, 0);
+          setTimeout(function () {
+            if (typeof window.nyeOpenCloudAuth === 'function') {
+              window.nyeOpenCloudAuth(reg ? 'register' : log ? 'login' : 'account');
+            }
+          }, 400);
+          try {
+            history.replaceState({}, '', window.location.pathname + window.location.hash);
+          } catch (e1) {}
+        } catch (e2) {}
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+          setTimeout(run, 0);
+        });
+      } else {
+        setTimeout(run, 0);
+      }
     })();
     initLocale();
     initCalendarTimeArchitecture();

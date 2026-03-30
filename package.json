@@ -1,7 +1,7 @@
 {
   "name": "nye-clock-adonyth",
   "private": true,
-  "description": "Cloudflare Pages: npm run build keeps index.html and tw_.html identical (single source for auth UI).",
+  "description": "Cloudflare Pages: _redirects maps / to tw_.html; npm run build copies tw_.html to index.html for mirrors.",
   "scripts": {
     "build": "cp tw_.html index.html"
   }
