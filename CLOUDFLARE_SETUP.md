@@ -61,6 +61,7 @@ After deploy:
 - Open `https://<your-pages-domain>/api/cloud-config` -> should return Supabase config JSON
 - Open app root `/` -> serves `index.html`（部署前运行 `npm run build` 使 `index.html` 与 `tw_.html` 一致）
 - **My account → Cloud**：应直接显示邮箱/手机/OAuth 与注册、登录（无需在页面里填 URL/key；由 `/api/cloud-config` 注入）
+- **macOS DMG（本站托管，方案 1）**：将 `website/downloads/NyeClock-1.0.0-arm64.dmg` 提交并部署后，访问 `https://<your-pages-domain>/website/downloads/NyeClock-1.0.0-arm64.dmg` 应触发下载（非 HTML）。详见 `website/downloads/README.txt` 与 `scripts/attach-dmg-to-website.sh`。
 
 ## 6) 面向最终用户：直接注册与登录
 
