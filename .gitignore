@@ -6,6 +6,7 @@ desktop/node_modules/
 # Secrets (never commit)
 .env
 .env.*
+cloud-config.json
 backend/.env
 backend/.env.*
 
@@ -22,3 +23,6 @@ backend/.env.*
 # Electron / desktop build output
 desktop/dist/
 desktop/out/
+
+# Large installers (optional: host on Pages under website/downloads/)
+website/downloads/*.dmg

@@ -36,6 +36,10 @@ These are **not** read from `index.html` — they are injected at runtime by the
 
 If you skip `OAUTH_REDIRECT`, the app falls back to `location.origin + '/'` for OAuth redirects.
 
+**You usually do not need anything else.** As long as `/api/cloud-config` returns JSON (see §5), the app gets Supabase from Cloudflare automatically — no extra files.
+
+**Rare fallback only:** If that URL ever fails (e.g. preview branch without env vars), the app can also read `/cloud-config.json` at the site root. That means: duplicate the example file `cloud-config.example.json` as `cloud-config.json`, paste the same URL and anon key you already use in Cloudflare, upload with the site. **Skip this** unless you know the Function is broken; it keeps secrets in the repo twice and is easy to forget to update.
+
 Then trigger a redeploy.
 
 ## 4) Supabase redirect settings

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="dark light" />
-  <meta name="description" content="Nye Clock — symbolic celestial time and sexagenary cycle instrument. Web app, PWA, and macOS download." />
+  <meta name="description" content="Nye Clock — symbolic celestial time and sexagenary cycle instrument. Web app and macOS download." />
   <title>Nye Clock — Official</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -29,7 +29,7 @@
       line-height: 1.6;
     }
     .wrap { max-width: 880px; margin: 0 auto; padding: clamp(24px, 5vw, 48px) clamp(18px, 4vw, 32px) 80px; }
-    header { text-align: center; margin-bottom: clamp(32px, 6vw, 56px); }
+    header { text-align: center; margin-bottom: clamp(28px, 5vw, 48px); }
     h1 {
       font-family: 'Cormorant Garamond', Georgia, serif;
       font-weight: 400;
@@ -39,15 +39,18 @@
     }
     .tagline { color: var(--muted); font-size: 0.95rem; max-width: 36em; margin: 0 auto; }
     .actions {
-      display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+      display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
       margin-top: 28px;
     }
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
-      padding: 12px 22px; border-radius: 999px;
-      font-size: 0.85rem; font-weight: 600; letter-spacing: 0.06em;
+      min-width: 200px;
+      padding: 14px 26px; border-radius: 999px;
+      font-size: 0.88rem; font-weight: 600; letter-spacing: 0.06em;
       text-decoration: none; border: 1px solid var(--border);
       transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      cursor: pointer;
+      font-family: inherit;
     }
     .btn:active { transform: scale(0.98); }
     .btn--primary {
@@ -74,15 +77,12 @@
     }
     section p { margin: 0 0 10px; color: var(--muted); font-size: 0.92rem; }
     section p:last-child { margin-bottom: 0; }
-    ul { margin: 0; padding-left: 1.2em; color: var(--muted); font-size: 0.92rem; }
-    li { margin-bottom: 6px; }
     code {
       font-size: 0.85em; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 6px;
     }
     footer {
       text-align: center; margin-top: 40px; font-size: 0.8rem; color: var(--muted);
     }
-    footer a { color: color-mix(in srgb, var(--accent) 80%, var(--text)); }
     .install-wrap { margin-top: 8px; }
     .install-steps {
       margin: 0; padding: 0; list-style: none; counter-reset: step;
@@ -99,72 +99,36 @@
       font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; justify-content: center;
       color: #eef2ff;
     }
-    .dl-row {
-      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px;
-    }
-    .dl-row .btn { flex: 1 1 200px; }
-    .hint { font-size: 0.82rem; color: var(--muted); margin-top: 10px; }
+    .hint { font-size: 0.82rem; color: var(--muted); margin-top: 12px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <h1>Nye Clock</h1>
-      <p class="tagline">Symbolic celestial time — sexagenary cycle instrument. Use the web app in your browser, install as a PWA, or run the macOS desktop build.</p>
+      <p class="tagline">Symbolic celestial time — sexagenary cycle instrument. Open the web app in your browser, or download the macOS desktop app.</p>
       <div class="actions">
         <a class="btn btn--primary" id="linkApp" href="../index.html">Open web app</a>
-        <a class="btn btn--primary" id="linkDmgArm" href="https://github.com/Adonyth/NyeClock/releases/latest" rel="noopener">Download macOS — Apple&nbsp;Silicon</a>
-        <a class="btn btn--primary" id="linkDmgX64" href="https://github.com/Adonyth/NyeClock/releases/latest" rel="noopener">Download macOS — Intel</a>
-        <a class="btn btn--ghost" id="linkGh" href="https://github.com/Adonyth/NyeClock" rel="noopener">GitHub repository</a>
-        <a class="btn btn--ghost" id="linkReleases" href="https://github.com/Adonyth/NyeClock/releases/latest" rel="noopener">All releases</a>
+        <a class="btn btn--primary" id="linkDownloadApp" href="#">Download for macOS (Apple&nbsp;Silicon)</a>
       </div>
+      <p class="hint" id="dlHint"></p>
     </header>
 
     <section>
-      <h2>Web app</h2>
-      <p>The full instrument loads from the site root (<code>/index.html</code>). Cloudflare Pages runs <code>npm run build</code> so the app stays in sync with <code>tw_.html</code>.</p>
-      <p>If this landing page is served under a subpath (e.g. <code>/website/</code>), use the button above or set the app URL in your deployment (see <code>DISTRIBUTION.md</code>).</p>
-    </section>
-
-    <section id="install-macos">
-      <h2>Install on macOS (DMG)</h2>
-      <p>The desktop app is a small window that opens the live web app. Pick the installer that matches your Mac, then follow the steps below.</p>
-      <div class="dl-row">
-        <a class="btn btn--primary" id="sectionDmgArm" href="https://github.com/Adonyth/NyeClock/releases/latest" rel="noopener">Download <code>.dmg</code> — Apple&nbsp;Silicon (M1/M2/M3)</a>
-        <a class="btn btn--primary" id="sectionDmgX64" href="https://github.com/Adonyth/NyeClock/releases/latest" rel="noopener">Download <code>.dmg</code> — Intel</a>
-      </div>
-      <p class="hint" id="dmgVersionHint"></p>
+      <h2>Install on macOS</h2>
+      <p>The desktop build is <strong>Apple Silicon only</strong> (M1 / M2 / M3 and newer). It opens the same live site as the web version. If you use an Intel Mac, use <strong>Open web app</strong> instead.</p>
       <div class="install-wrap">
         <ol class="install-steps">
-          <li>Download the <code>.dmg</code> file using the button for your Mac type. If a direct download does not start, open <a href="https://github.com/Adonyth/NyeClock/releases/latest" rel="noopener">the latest release</a> and choose <code>NyeClock-…-arm64.dmg</code> (Apple Silicon) or <code>NyeClock-…-x64.dmg</code> (Intel).</li>
-          <li>Open the downloaded <code>.dmg</code>. A window opens showing <strong>Nye Clock</strong>.</li>
-          <li>Drag <strong>Nye Clock</strong> into your <strong>Applications</strong> folder.</li>
-          <li>Open <strong>Applications</strong>, double-click <strong>Nye Clock</strong>. The first launch may show a security prompt — if macOS says the app cannot be opened, go to <strong>System Settings → Privacy &amp; Security</strong> and choose <strong>Open Anyway</strong> for Nye Clock (this is normal for apps that are not notarized).</li>
-          <li>Sign in under <strong>My account → Cloud</strong> in the app if you use cloud sync.</li>
+          <li>Click <strong>Download for macOS</strong>. Your browser should save the <code>.dmg</code> file directly (no repository page).</li>
+          <li>Open the <code>.dmg</code>, then drag <strong>Nye Clock</strong> into <strong>Applications</strong>.</li>
+          <li>Launch from <strong>Applications</strong>. If macOS blocks the first open, use <strong>System Settings → Privacy &amp; Security → Open Anyway</strong>.</li>
+          <li>Optional: sign in under <strong>My account → Cloud</strong> for sync.</li>
         </ol>
       </div>
     </section>
 
-    <section>
-      <h2>Build the DMG yourself</h2>
-      <p>Optional: build installers on a Mac from the repo (<code>desktop/</code>).</p>
-      <ul>
-        <li><code>cd desktop &amp;&amp; npm install &amp;&amp; npm run dist:mac</code></li>
-        <li>Set <code>NYE_CLOCK_APP_URL</code> before building so the app opens your deployed site.</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2>Repository &amp; docs</h2>
-      <ul>
-        <li><a href="https://github.com/Adonyth/NyeClock" rel="noopener">github.com/Adonyth/NyeClock</a></li>
-        <li>Cloudflare + Supabase: <code>CLOUDFLARE_SETUP.md</code></li>
-        <li>Downloads &amp; release process: <code>DISTRIBUTION.md</code>, <code>RELEASES.md</code></li>
-      </ul>
-    </section>
-
     <footer>
-      <p>Nye Clock · <a href="https://github.com/Adonyth/NyeClock/blob/main/README.md">README</a></p>
+      <p>Nye Clock</p>
     </footer>
   </div>
   <script>
@@ -179,23 +143,68 @@
         }
       }
 
-      // Must match desktop/package.json "version" and release asset names (NyeClock-VERSION-arch.dmg).
+      // Must match desktop/package.json "version" and DMG filenames.
       var NYE_DESKTOP_VERSION = '1.0.0';
-      var REPO = 'Adonyth/NyeClock';
-      var base = 'https://github.com/' + REPO + '/releases/latest/download/';
-      var arm = base + 'NyeClock-' + NYE_DESKTOP_VERSION + '-arm64.dmg';
-      var intel = base + 'NyeClock-' + NYE_DESKTOP_VERSION + '-x64.dmg';
+      /**
+       * Where DMG files are served from:
+       * - 'site'  = same origin as this page, under ./downloads/ (recommended: direct download, no GitHub).
+       * - 'github' = GitHub Releases direct file URL (still downloads the file; browser may show github.com in the network layer).
+       */
+      var DMG_SOURCE = 'site';
+      // Only arm64 is published; no Intel (.x64) installer.
+      var DMG_ARCH = 'arm64';
 
-      var ids = ['linkDmgArm', 'linkDmgX64', 'sectionDmgArm', 'sectionDmgX64'];
-      var urls = [arm, intel, arm, intel];
-      for (var i = 0; i < ids.length; i++) {
-        var el = document.getElementById(ids[i]);
-        if (el) el.setAttribute('href', urls[i]);
+      function siteDownloadsBase() {
+        var u = new URL(window.location.href);
+        var path = u.pathname;
+        if (!path.endsWith('/')) {
+          path = path.replace(/\/[^/]+$/, '/');
+        }
+        if (!path.endsWith('/')) path += '/';
+        u.pathname = path + 'downloads/';
+        u.hash = '';
+        u.search = '';
+        return u.toString();
       }
 
-      var hint = document.getElementById('dmgVersionHint');
-      if (hint) {
-        hint.textContent = 'Direct links target v' + NYE_DESKTOP_VERSION + ' assets on GitHub Releases. After you ship a new version, update NYE_DESKTOP_VERSION in website/index.html to match.';
+      function githubDmgUrl() {
+        return (
+          'https://github.com/Adonyth/NyeClock/releases/latest/download/NyeClock-' +
+          NYE_DESKTOP_VERSION +
+          '-' +
+          DMG_ARCH +
+          '.dmg'
+        );
+      }
+
+      function dmgUrl() {
+        if (DMG_SOURCE === 'github') {
+          return githubDmgUrl();
+        }
+        return siteDownloadsBase() + 'NyeClock-' + NYE_DESKTOP_VERSION + '-' + DMG_ARCH + '.dmg';
+      }
+
+      var dl = document.getElementById('linkDownloadApp');
+      var hint = document.getElementById('dlHint');
+      if (dl) {
+        var url = dmgUrl();
+        var fname = 'NyeClock-' + NYE_DESKTOP_VERSION + '-' + DMG_ARCH + '.dmg';
+        dl.setAttribute('href', url);
+        if (DMG_SOURCE === 'site') {
+          dl.setAttribute('download', fname);
+        } else {
+          dl.removeAttribute('download');
+        }
+        if (hint) {
+          hint.textContent =
+            'Installer: ' +
+            fname +
+            ' · Version ' +
+            NYE_DESKTOP_VERSION +
+            (DMG_SOURCE === 'site'
+              ? '. Put this file in website/downloads/ on your site (see website/downloads/README.txt).'
+              : '.');
+        }
       }
     })();
   </script>

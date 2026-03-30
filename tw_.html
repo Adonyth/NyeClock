@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
-  <!-- 云端：生产环境由 Cloudflare Pages Function /api/cloud-config 注入 Supabase（面板环境变量 SUPABASE_URL、SUPABASE_ANON_KEY）。本地 file:// 或自托管时可取消注释并手动填入： -->
+  <!-- 云端：生产环境优先 GET /api/cloud-config（Pages Function，环境变量 SUPABASE_URL、SUPABASE_ANON_KEY）；失败时再 GET /cloud-config.json（见 cloud-config.example.json）。file:// 不拉取；也可取消注释下方脚本手动填入。 -->
   <!-- <script>window.NYE_SUPABASE_URL="https://YOUR_PROJECT.supabase.co";window.NYE_SUPABASE_ANON_KEY="YOUR_ANON_KEY";</script> -->
   <title id="docTitle">Nye Clock</title>
   <!-- Three.js: main-page flagship Sun–Earth–Moon WebGL instrument (sync load before inline scripts) -->
@@ -1457,6 +1457,37 @@ body::after {
       border: 1px solid color-mix(in srgb, var(--card-border) 70%, transparent);
       background: color-mix(in srgb, var(--card-bg) 88%, transparent);
       color: var(--text-color);
+    }
+    .auth-topbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: min(100vw - 24px, 320px);
+    }
+    .auth-topbar__btn {
+      border: 1px solid color-mix(in srgb, var(--card-border) 70%, transparent);
+      background: color-mix(in srgb, var(--card-bg) 78%, transparent);
+      backdrop-filter: blur(12px) saturate(130%);
+      -webkit-backdrop-filter: blur(12px) saturate(130%);
+      color: var(--text-color);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+      line-height: 1.2;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .auth-topbar__btn:hover {
+      border-color: color-mix(in srgb, var(--accent-color) 45%, var(--card-border));
+    }
+    .auth-topbar__btn--solo {
+      letter-spacing: 0.08em;
     }
     .panel-back-strip {
       display: flex;
@@ -7773,6 +7804,11 @@ body::after {
           <option value="silverblack" data-i18n="theme.silverblack">Silver gauge</option>
         </select>
       </label>
+      <div class="auth-topbar" id="authTopbar" role="group" aria-label="Account">
+        <button type="button" class="auth-topbar__btn" id="authTopRegister" data-i18n="nav.register">Register</button>
+        <button type="button" class="auth-topbar__btn" id="authTopLogin" data-i18n="nav.login">Sign in</button>
+        <button type="button" class="auth-topbar__btn auth-topbar__btn--solo" id="authTopAccount" hidden data-i18n="dock.account">My account</button>
+      </div>
     </div>
 
     <!-- Main instrument surface -->
@@ -8584,7 +8620,9 @@ body::after {
         world: 'World',
         natal: 'Natal 命',
         cycles: 'Cycles 运',
-        themeLabel: 'Theme'
+        themeLabel: 'Theme',
+        register: 'Register',
+        login: 'Sign in'
       },
       theme: {
         stellar: 'Stellar dark',
@@ -8986,7 +9024,9 @@ body::after {
         world: '世界',
         natal: '命盘',
         cycles: '运势',
-        themeLabel: '主题'
+        themeLabel: '主题',
+        register: '注册',
+        login: '登录'
       },
       theme: {
         stellar: '星象深色',
@@ -16654,36 +16694,50 @@ body::after {
         if (!u || !k) return null;
         return { url: u, key: k };
       }
+      function applyCloudConfigPayload(json) {
+        if (!json || json.error) return false;
+        var u = String(json.supabaseUrl || '').trim();
+        var k = String(json.supabaseAnonKey || '').trim();
+        if (!u || !k) return false;
+        window.NYE_SUPABASE_URL = u;
+        window.NYE_SUPABASE_ANON_KEY = k;
+        if (typeof json.oauthRedirect === 'string' && json.oauthRedirect.trim()) {
+          window.NYE_OAUTH_REDIRECT = json.oauthRedirect.trim();
+        } else {
+          try {
+            window.NYE_OAUTH_REDIRECT = window.location.origin + '/';
+          } catch (eOr) {}
+        }
+        try {
+          localStorage.setItem(LS_SUPA_URL, u);
+          localStorage.setItem(LS_SUPA_KEY, k);
+        } catch (eBoot) {}
+        return true;
+      }
       function bootstrapCloudConfigFromBackend() {
         if (window.location.protocol === 'file:') return Promise.resolve(false);
-        return fetch('/api/cloud-config', { method: 'GET', cache: 'no-store' })
-          .then(function (res) {
-            if (!res.ok) return null;
-            return res.json();
-          })
-          .then(function (json) {
-            if (!json || json.error || !json.supabaseUrl || !json.supabaseAnonKey) return false;
-            var u = String(json.supabaseUrl || '').trim();
-            var k = String(json.supabaseAnonKey || '').trim();
-            if (!u || !k) return false;
-            window.NYE_SUPABASE_URL = u;
-            window.NYE_SUPABASE_ANON_KEY = k;
-            if (typeof json.oauthRedirect === 'string' && json.oauthRedirect.trim()) {
-              window.NYE_OAUTH_REDIRECT = json.oauthRedirect.trim();
-            } else {
-              try {
-                window.NYE_OAUTH_REDIRECT = window.location.origin + '/';
-              } catch (eOr) {}
-            }
-            try {
-              localStorage.setItem(LS_SUPA_URL, u);
-              localStorage.setItem(LS_SUPA_KEY, k);
-            } catch (eBoot) {}
-            return true;
-          })
-          .catch(function () {
-            return false;
-          });
+        var origin = '';
+        try {
+          origin = window.location.origin || '';
+        } catch (eO) {}
+        if (!origin) return Promise.resolve(false);
+        var urls = [origin + '/api/cloud-config', origin + '/cloud-config.json'];
+        function tryNext(i) {
+          if (i >= urls.length) return Promise.resolve(false);
+          return fetch(urls[i], { method: 'GET', cache: 'no-store', credentials: 'same-origin' })
+            .then(function (res) {
+              if (!res.ok) return null;
+              return res.json();
+            })
+            .then(function (json) {
+              if (json && applyCloudConfigPayload(json)) return true;
+              return tryNext(i + 1);
+            })
+            .catch(function () {
+              return tryNext(i + 1);
+            });
+        }
+        return tryNext(0);
       }
       function nyeCollectLocalPayload() {
         var o = { _v: 1 };
@@ -16811,7 +16865,40 @@ body::after {
             return null;
           });
       }
+      function updateAuthTopbarVisibility(session) {
+        var r = document.getElementById('authTopRegister');
+        var l = document.getElementById('authTopLogin');
+        var a = document.getElementById('authTopAccount');
+        var signedIn = !!(session && session.user);
+        if (r) r.hidden = signedIn;
+        if (l) l.hidden = signedIn;
+        if (a) a.hidden = !signedIn;
+      }
+      window.nyeOpenCloudAuth = function (mode) {
+        if (typeof window.showDockPanel === 'function') window.showDockPanel('account');
+        var nav = document.getElementById('accountSubnav');
+        var cloudBtn = nav && nav.querySelector('[data-account-pane="cloud"]');
+        if (cloudBtn) cloudBtn.click();
+        setTimeout(function () {
+          var em = document.getElementById('nyeCloudEmail');
+          var pw = document.getElementById('nyeCloudPassword');
+          if (mode === 'register' && em) {
+            try {
+              em.focus();
+            } catch (eF) {}
+          } else if (mode === 'login' && pw) {
+            try {
+              pw.focus();
+            } catch (eF2) {}
+          } else if (mode === 'account' && em) {
+            try {
+              em.focus();
+            } catch (eF3) {}
+          }
+        }, 80);
+      };
       function refreshCloudUI(session) {
+        updateAuthTopbarVisibility(session);
         var cfg = nyeGetSupabaseConfig();
         if (!cfg) {
           if (elLead) elLead.style.display = '';
@@ -17177,6 +17264,24 @@ body::after {
             });
           });
         }
+      }
+      var authTopReg = document.getElementById('authTopRegister');
+      if (authTopReg) {
+        authTopReg.addEventListener('click', function () {
+          window.nyeOpenCloudAuth('register');
+        });
+      }
+      var authTopLog = document.getElementById('authTopLogin');
+      if (authTopLog) {
+        authTopLog.addEventListener('click', function () {
+          window.nyeOpenCloudAuth('login');
+        });
+      }
+      var authTopAcc = document.getElementById('authTopAccount');
+      if (authTopAcc) {
+        authTopAcc.addEventListener('click', function () {
+          window.nyeOpenCloudAuth('account');
+        });
       }
       bootstrapCloudConfigFromBackend().then(function () {
         initCloudPaneReady();
