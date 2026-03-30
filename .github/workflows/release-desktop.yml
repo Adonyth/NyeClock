@@ -1,0 +1,40 @@
+# Builds macOS DMG when a version tag v* is pushed, or manually.
+# Upload the artifact from the Actions run to GitHub Releases.
+name: Desktop DMG
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  dmg:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: desktop
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build DMG
+        env:
+          NYE_CLOCK_APP_URL: ${{ vars.NYE_CLOCK_APP_URL }}
+        run: |
+          export NYE_CLOCK_APP_URL="${NYE_CLOCK_APP_URL:-https://nyeclock.pages.dev/}"
+          npm run dist:mac
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nye-clock-dmg
+          path: desktop/dist/*.dmg
+          if-no-files-found: warn

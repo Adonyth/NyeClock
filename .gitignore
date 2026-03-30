@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 backend/node_modules/
+desktop/node_modules/
 
 # Secrets (never commit)
 .env
@@ -17,3 +18,7 @@ backend/.env.*
 # OS / editor
 .DS_Store
 *.log
+
+# Electron / desktop build output
+desktop/dist/
+desktop/out/

@@ -1,0 +1,49 @@
+{
+  "name": "nye-clock-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nye Clock — Electron shell (loads deployed web app or local index.html)",
+  "main": "main.js",
+  "author": "Adonyth",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist:mac": "electron-builder --mac dmg",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.adonyth.nyeclock",
+    "productName": "Nye Clock",
+    "copyright": "Copyright © Adonyth",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "Nye Clock ${version}",
+      "artifactName": "NyeClock-${version}-${arch}.dmg"
+    }
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  }
+}

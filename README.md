@@ -143,3 +143,15 @@ What it does:
 - installs and starts `systemd` service (`nye-clock`)
 - configures nginx reverse proxy
 - enables HTTPS automatically when `DOMAIN` + `EMAIL` are provided
+
+## 发布与交付（官网、DMG、欢迎邮件）
+
+| 内容 | 文档 / 路径 |
+|------|----------------|
+| 总览（GitHub、Pages、官网路径、下载链接） | `DISTRIBUTION.md` |
+| GitHub Releases、打 DMG、CI | `RELEASES.md` |
+| 注册后欢迎邮件（Resend + Database Webhook） | `supabase/WELCOME_EMAIL.md` |
+| 官网落地页 | `website/index.html` |
+| Electron 桌面壳与 `NYE_CLOCK_APP_URL` | `desktop/README.md` |
+
+说明：纯手机号注册若无邮箱，欢迎邮件会跳过；需要短信欢迎需另接 Twilio 等。
