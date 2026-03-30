@@ -2561,6 +2561,16 @@ body::after {
       color: var(--highlight-color);
       text-shadow: 0 0 20px color-mix(in srgb, var(--accent-color) 25%, transparent);
     }
+    .picker-col .picker-item--gz {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+    .picker-col .picker-item--gz.selected .stem,
+    .picker-col .picker-item--gz.selected .branch {
+      font-weight: 600;
+    }
     /* Shared list-item base for alarm + world clock */
     #alarmList,
     #worldList {
@@ -4323,8 +4333,9 @@ body::after {
     }
     .world-dial {
       --wd-r: min(36vw, 178px);
-      --woc-mid-r: calc(var(--wd-r) + 26px);
-      --woc-outer-r: calc(var(--wd-r) + 58px);
+      /* Mid ring: arc between adjacent capsule centers = R·π/6 must exceed capsule width + margin (~12px). */
+      --woc-mid-r: max(calc(var(--wd-r) + 42px), 172px);
+      --woc-outer-r: max(calc(var(--wd-r) + 62px), calc(var(--woc-mid-r) + 48px));
       position: relative;
       z-index: 2;
       width: calc(var(--wd-r) * 2);
@@ -4412,7 +4423,7 @@ body::after {
         align-items: start;
       }
       .world-ref-chip-time,
-      .world-ref-chip-branch {
+      .world-ref-chip-pillar {
         justify-self: start;
         text-align: left;
       }
@@ -4450,15 +4461,18 @@ body::after {
       justify-self: end;
       text-align: right;
     }
-    .world-ref-chip-branch {
+    .world-ref-chip-pillar {
       margin: 0;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 500;
-      letter-spacing: 0.16em;
-      color: color-mix(in srgb, var(--accent-color) 82%, var(--text-color));
+      letter-spacing: 0.1em;
       justify-self: end;
       text-align: right;
-      min-width: 1.5em;
+      min-width: 2em;
+    }
+    .world-ref-chip-pillar .stem,
+    .world-ref-chip-pillar .branch {
+      font-weight: 600;
     }
     .world-dial-outer-geo-ring {
       position: absolute;
@@ -4614,9 +4628,10 @@ body::after {
       position: absolute;
       left: 0;
       top: calc(-1 * var(--woc-mid-r, calc(var(--wd-r) + 26px)));
-      width: 80px;
-      margin-left: -40px;
-      padding: 8px 8px 9px;
+      width: 76px;
+      margin-left: -38px;
+      padding: 7px 6px 8px;
+      box-sizing: border-box;
       border-radius: 11px 11px 15px 15px;
       text-align: center;
       background:
@@ -4669,14 +4684,17 @@ body::after {
       color: var(--highlight-color);
       line-height: 1.2;
     }
-    .woc-branch {
+    .woc-pillar {
       display: block;
       margin-top: 4px;
       font-size: 14px;
       font-weight: 600;
-      letter-spacing: 0.2em;
-      color: color-mix(in srgb, var(--accent-color) 88%, var(--text-color));
-      line-height: 1;
+      letter-spacing: 0.14em;
+      line-height: 1.15;
+    }
+    .woc-pillar .stem,
+    .woc-pillar .branch {
+      font-weight: 600;
     }
     /* Reading panel — collapsible instrument drawer */
     .interp-panel {
@@ -5320,6 +5338,8 @@ body::after {
       }
       .world-dial {
         --wd-r: min(40vw, 168px);
+        --woc-mid-r: max(calc(var(--wd-r) + 40px), 170px);
+        --woc-outer-r: max(calc(var(--wd-r) + 58px), calc(var(--woc-mid-r) + 46px));
       }
       .world-orbit-stage {
         width: min(96vw, 440px);
@@ -5570,10 +5590,7 @@ body::after {
         0 10px 32px var(--card-shadow);
     }
 
-    /* World ref chip time: accent colour for the branch glyph */
-    .world-ref-chip-branch {
-      color: color-mix(in srgb, var(--accent-color) 92%, var(--highlight-color));
-    }
+    /* World ref chip: hour pillar uses per-stem/branch colours via .stem / .branch */
 
     /* Pillar nameplate border bottom: slightly more visible */
     .pillar-nameplate {
@@ -7691,13 +7708,24 @@ body::after {
         border-bottom: none;
       }
       .world-orbit-capsule {
-        width: 72px;
-        margin-left: -36px;
-        padding: 6px 6px 7px;
+        width: 62px;
+        margin-left: -31px;
+        padding: 5px 4px 6px;
       }
       .world-dial {
-        --woc-mid-r: calc(var(--wd-r) + 22px);
-        --woc-outer-r: calc(var(--wd-r) + 48px);
+        --woc-mid-r: max(calc(var(--wd-r) + 36px), 158px);
+        --woc-outer-r: max(calc(var(--woc-mid-r) + 40px), calc(var(--wd-r) + 50px));
+      }
+      .woc-city {
+        font-size: 7.5px;
+      }
+      .woc-time {
+        font-size: 10px;
+        margin-top: 4px;
+      }
+      .woc-pillar {
+        font-size: 12px;
+        margin-top: 3px;
       }
       .world-outer-geo-plaque {
         width: 82px;
@@ -10789,6 +10817,23 @@ body::after {
       return '<span style="color:' + color + '">' + bChar + '</span>';
     }
 
+    /** Color every 天干 / 地支 character in a plain string (for alarm-derived narrative, etc.). */
+    function colorizeLooseGanzhiChars(s) {
+      if (!s) return '';
+      var out = '';
+      for (var i = 0; i < s.length; i++) {
+        var c = s.charAt(i);
+        if (stemInfo[c]) {
+          out += coloredStemHTML(c);
+        } else if (branchInfo[c]) {
+          out += coloredBranchHTML(c);
+        } else {
+          out += escapeHtml(c);
+        }
+      }
+      return out;
+    }
+
     
     // 精确干支计算：若 solarlunar 库可用，返回干支年、月、日
     function getPreciseGZ(date) {
@@ -11753,16 +11798,17 @@ body::after {
           'bazi-derived-alarm-item bazi-derived-alarm-item--' + (al.severity || 'low');
         const layer = document.createElement('div');
         layer.className = 'bazi-derived-alarm-item__layer';
-        layer.textContent = al.layer || '';
+        layer.innerHTML = colorizeLooseGanzhiChars(al.layer || '');
         const body = document.createElement('div');
         body.className = 'bazi-derived-alarm-item__body';
-        body.textContent = isZh ? al.zh : al.en;
+        body.innerHTML = colorizeLooseGanzhiChars(isZh ? al.zh : al.en);
         li.appendChild(layer);
         li.appendChild(body);
         if (al.desc) {
           const why = document.createElement('div');
           why.className = 'bazi-derived-alarm-item__why';
-          why.textContent = (isZh ? '机理：' : 'Why: ') + al.desc;
+          why.innerHTML =
+            colorizeLooseGanzhiChars((isZh ? '机理：' : 'Why: ') + al.desc);
           li.appendChild(why);
         }
         ul.appendChild(li);
@@ -14334,13 +14380,19 @@ body::after {
       values.forEach((val) => {
         const div = document.createElement('div');
         div.className = 'picker-item';
-        let text;
         if (typeof val === 'number') {
-          text = val.toString().padStart(2, '0');
+          div.textContent = val.toString().padStart(2, '0');
+        } else if (
+          typeof val === 'string' &&
+          val.length === 2 &&
+          stemInfo[val.charAt(0)] &&
+          branchInfo[val.charAt(1)]
+        ) {
+          div.classList.add('picker-item--gz');
+          div.innerHTML = coloredPairHTML(val);
         } else {
-          text = val;
+          div.textContent = typeof val === 'string' ? val : String(val);
         }
-        div.textContent = text;
         col.appendChild(div);
       });
       col.scrollTop = 2 * 40;
@@ -14651,8 +14703,8 @@ body::after {
           escapeHtml(meta.short) +
           '</span><span class="woc-time">' +
           escapeHtml(slot.timeStr) +
-          '</span><span class="woc-branch">' +
-          escapeHtml(slot.branch) +
+          '</span><span class="woc-pillar">' +
+          coloredPairHTML(slot.hourGZ) +
           '</span>';
         marker.appendChild(cap);
         root.appendChild(marker);
@@ -14694,8 +14746,8 @@ body::after {
             geoHtml +
             '</div><span class="world-ref-chip-time">' +
             escapeHtml(slot.timeStr) +
-            '</span><span class="world-ref-chip-branch">' +
-            escapeHtml(slot.branch) +
+            '</span><span class="world-ref-chip-pillar">' +
+            coloredPairHTML(slot.hourGZ) +
             '</span>';
           strip.appendChild(chip);
         });
